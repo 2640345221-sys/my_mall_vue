@@ -14,9 +14,18 @@ const request = axios.create({
 
 request.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token')
-        if (token) {
-            config.headers.token = `${token}`
+        // 根据请求路径判断是用户端还是管理端
+        const url = config.url || ''
+        if (url.startsWith('/admin')) {
+            const adminToken = localStorage.getItem('adminToken')
+            if (adminToken) {
+                config.headers.token = `${adminToken}`
+            }
+        } else {
+            const token = localStorage.getItem('token')
+            if (token) {
+                config.headers.token = `${token}`
+            }
         }
         return config
     },

@@ -1,0 +1,208 @@
+/* Admin Layout - Full Screen */
+.admin-layout {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.admin-sidebar {
+  width: 220px;
+  height: 100vh;
+  background-color: #304156;
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.admin-sidebar .logo {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  background-color: #263445;
+}
+
+.admin-sidebar .admin-menu {
+  border-right: none !important;
+}
+
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f0f2f5;
+}
+
+/* Header */
+.admin-header {
+  height: 60px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  flex-shrink: 0;
+}
+
+.admin-header .breadcrumb {
+  font-size: 14px;
+  color: #666;
+}
+
+.admin-header .breadcrumb .separator {
+  margin: 0 8px;
+  color: #999;
+}
+
+.admin-header .user-info .user-dropdown {
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Page Content */
+.page-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Search Bar / Action Bar */
+.search-bar,
+.action-bar {
+  background: white;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Table Container */
+.page-content .el-table {
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Pagination */
+.pagination {
+  background: white;
+  padding: 16px 20px;
+  margin-top: 16px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: flex-end;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Order Detail */
+.order-detail {
+  padding: 10px 0;
+}
+
+.order-detail .detail-section {
+  margin-bottom: 20px;
+}
+
+.order-detail .detail-section h4 {
+  margin-bottom: 10px;
+  color: #303133;
+  font-size: 16px;
+}
+
+.order-detail .detail-section p {
+  margin: 8px 0;
+  color: #606266;
+  font-size: 14px;
+}
+
+.order-detail .detail-section p span {
+  color: #909399;
+  margin-right: 8px;
+}
+
+.order-detail .detail-section.total {
+  background: #f5f7fa;
+  padding: 15px;
+  border-radius: 4px;
+}
+
+.order-detail .detail-section.total .final-total {
+  font-size: 16px;
+  font-weight: bold;
+  color: #f56c6c;
+  margin-top: 10px;
+}
+
+/* Cover Uploader */
+.cover-uploader {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  width: 148px;
+  height: 148px;
+}
+
+.cover-uploader:hover {
+  border-color: #409eff;
+}
+
+.cover-uploader .cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cover-uploader .cover-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 148px;
+  height: 148px;
+  line-height: 148px;
+  text-align: center;
+}
+
+/* Scrollbar Styles */
+.admin-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.admin-sidebar::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.page-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.page-content::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.page-content::-webkit-scrollbar-track {
+  background-color: transparent;
+}

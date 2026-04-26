@@ -25,7 +25,7 @@ export interface IndexPageDTO{
     type:number
 }
 
-export const useIndexConfigStore=defineStore('indexConfig',()=>{
+export const useAdminIndexStore=defineStore('adminIndex',()=>{
     const indexConfig=async(indexPageDTO:IndexPageDTO):Promise<PageResult>=>{
         const res=await request.get('/admin/indexConfig',{params:indexPageDTO})
         return res

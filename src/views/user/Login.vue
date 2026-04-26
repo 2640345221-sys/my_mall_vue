@@ -41,8 +41,9 @@
         </el-form-item>
       </el-form>
       
-      <div class="register-link">
+      <div class="login-links">
         <el-link type="primary" @click="getRegister">还没有账号？去注册</el-link>
+        <el-link type="info" @click="goToAdminLogin">管理员登录</el-link>
       </div>
     </div>
   </div>
@@ -86,6 +87,10 @@ const handleLogin =async()=>{
 const getRegister=()=>{
     ElMessage.info('注册功能稍后实现')
 }
+
+const goToAdminLogin=()=>{
+    router.push('/admin/login')
+}
 </script>
 
 <style scoped>
@@ -94,34 +99,28 @@ const getRegister=()=>{
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f5f5f5;
 }
 
 .login-box {
   width: 400px;
   padding: 40px;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .title {
   text-align: center;
   margin-bottom: 30px;
-  color: #333;
   font-size: 24px;
-}
-
-.login-form {
-  margin-top: 20px;
 }
 
 .login-btn {
   width: 100%;
 }
 
-.register-link {
-  text-align: center;
+.login-links {
+  display: flex;
+  justify-content: space-between;
   margin-top: 20px;
 }
 </style>

@@ -74,9 +74,14 @@ const router =createRouter({
             component:()=>import('@/views/user/User.vue')
         },
         {
-            path:'/user/profile',
-            name:'UserProfile',
-            component:()=>import('@/views/user/UserProfile.vue')
+            path:'/user/setting',
+            name:'Setting',
+            component:()=>import('@/views/user/Setting.vue')
+        },
+        {
+            path:'/about',
+            name:'About',
+            component:()=>import('@/views/user/About.vue')
         },
         // 管理端路由
         {
@@ -86,8 +91,7 @@ const router =createRouter({
         },
         {
             path:'/admin',
-            name:'AdminDashboard',
-            component:()=>import('@/views/admin/Dashboard.vue')
+            redirect:'/admin/goods'
         },
         {
             path:'/admin/goods',
@@ -136,8 +140,8 @@ router.beforeEach((to, from, next) => {
     }
     
     // 用户端某些页面需要登录
-    const needAuth = ['/cart', '/order', '/create-order', '/address', '/address-edit']
-    if (needAuth.includes(to.path) && !token) {
+    const needAuth = ['/cart', '/order', '/create-order', '/address', '/address-edit', '/user/setting']
+    if (needAuth.some(path => to.path.startsWith(path)) && !token) {
         next('/login')
         return
     }
