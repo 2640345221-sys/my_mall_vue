@@ -28,10 +28,6 @@
         <el-icon><Menu /></el-icon>
         <span>分类管理</span>
       </el-menu-item>
-      <el-menu-item index="/admin/carousel">
-        <el-icon><Picture /></el-icon>
-        <span>轮播图管理</span>
-      </el-menu-item>
       <el-menu-item index="/admin/index-config">
         <el-icon><Setting /></el-icon>
         <span>首页配置</span>

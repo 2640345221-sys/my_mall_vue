@@ -72,7 +72,6 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createTime" label="创建时间" min-width="180" />
           <el-table-column label="操作" min-width="200" fixed="right">
             <template #default="scope">
               <el-button type="primary" link @click="handleEdit(scope.row)">
@@ -94,9 +93,23 @@
             v-model:current-page="state.page"
             v-model:page-size="state.pageSize"
             :total="state.total"
-            layout="total, prev, pager, next, jumper"
+            layout="prev, pager, next"
+            :prev-text="'上一页'"
+            :next-text="'下一页'"
             @current-change="handleCurrentChange"
           />
+          <div class="pagination-info">
+            <span class="jump-label">跳转到</span>
+            <el-input-number
+              v-model="state.jumpPage"
+              :min="1"
+              :max="getTotalPages() || 1"
+              size="small"
+              style="width: 80px; margin: 0 8px"
+            />
+            <span class="total-pages">共 {{ getTotalPages() || 0 }} 页</span>
+            <span class="total-records">共 {{ state.total }} 条</span>
+          </div>
         </div>
       </div>
     </div>
@@ -137,6 +150,12 @@
         </el-form-item>
         <el-form-item label="库存" prop="stockNum">
           <el-input-number v-model="state.form.stockNum" :min="0" :precision="0" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="上架状态" prop="sellStatus">
+          <el-select v-model="state.form.sellStatus" placeholder="选择上架状态" style="width: 100%">
+            <el-option label="上架" :value="false" />
+            <el-option label="下架" :value="true" />
+          </el-select>
         </el-form-item>
         <el-form-item label="商品图片" prop="coverImg">
           <el-upload
@@ -226,6 +245,7 @@ const state = reactive({
   dialogVisible: false,
   dialogType: 'add' as 'add' | 'edit',
   submitting: false,
+  jumpPage: 1,
   form: {
     id: null as number | null,
     name: '',
@@ -235,7 +255,8 @@ const state = reactive({
     sellingPrice: 0,
     stockNum: 0,
     coverImg: '',
-    detailContent: ''
+    detailContent: '',
+    sellStatus: false
   }
 })
 
@@ -270,7 +291,8 @@ const loadGoodsList = async () => {
 const loadCategoryList = async () => {
   try {
     const res = await axios.get('/admin/category')
-    state.categoryList = res || []
+    // 只保留三级分类（level === 3）
+    state.categoryList = res ? res.filter((item: any) => item.level === 3) : []
   } catch (error) {
     console.error('加载分类列表失败', error)
   }
@@ -375,8 +397,68 @@ const handleCurrentChange = (val: number) => {
   loadGoodsList()
 }
 
+// 跳转到指定页面
+const handleJumpPage = () => {
+  if (state.jumpPage >= 1 && state.jumpPage <= getTotalPages()) {
+    state.page = state.jumpPage
+    loadGoodsList()
+  }
+}
+
+// 计算总页数
+const getTotalPages = (): number => {
+  const total = Number(state.total) || 0
+  const pageSize = Number(state.pageSize) || 10
+  
+  if (total <= 0 || pageSize <= 0) {
+    return 0
+  }
+  
+  return Math.ceil(total / pageSize)
+}
+
 onMounted(() => {
   loadGoodsList()
   loadCategoryList()
 })
 </script>
+
+<style scoped>
+.search-bar {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 10px;
+}
+
+.pagination {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #606266;
+  font-size: 14px;
+}
+
+.jump-label {
+  color: #606266;
+}
+
+.total-pages,
+.total-records {
+  color: #606266;
+  margin-left: 8px;
+}
+
+.image-preview {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+}
+</style>

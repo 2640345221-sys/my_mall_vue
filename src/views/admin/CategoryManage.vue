@@ -13,24 +13,17 @@
         </div>
 
         <!-- 分类表格 -->
-        <el-table :data="state.categoryList" v-loading="state.loading" border row-key="id">
+        <el-table :data="state.categoryList" v-loading="state.loading" row-key="id">
           <el-table-column prop="id" label="ID" min-width="80" />
           <el-table-column prop="name" label="分类名称" min-width="200" />
           <el-table-column prop="level" label="层级" min-width="100">
             <template #default="scope">
-              <el-tag :type="scope.row.level === 1 ? 'primary' : 'success'">
-                {{ scope.row.level === 1 ? '一级' : '二级' }}
+              <el-tag :type="scope.row.level === 1 ? 'primary' : scope.row.level === 2 ? 'success' : 'warning'">
+                {{ scope.row.level === 1 ? '一级' : scope.row.level === 2 ? '二级' : '三级' }}
               </el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="rank" label="优先值" min-width="100" />
-          <el-table-column label="状态" min-width="100">
-            <template #default="scope">
-              <el-tag type="success">
-                启用
-              </el-tag>
-            </template>
-          </el-table-column>
           <el-table-column label="操作" min-width="200" fixed="right">
             <template #default="scope">
               <el-button type="primary" link @click="handleEdit(scope.row)">
@@ -56,10 +49,9 @@
           <el-input v-model="state.form.name" placeholder="请输入分类名称" />
         </el-form-item>
         <el-form-item label="上级分类" prop="parentId">
-          <el-select v-model="state.form.parentId" placeholder="选择上级分类" style="width: 100%" clearable>
-            <el-option label="无（一级分类）" :value="0" />
+          <el-select v-model="state.form.parentId" placeholder="请选择二级分类" style="width: 100%">
             <el-option
-              v-for="item in state.firstLevelCategories"
+              v-for="item in secondLevelCategories"
               :key="item.id"
               :label="item.name"
               :value="item.id"
@@ -104,9 +96,9 @@ const state = reactive({
   }
 })
 
-// 一级分类列表
-const firstLevelCategories = computed(() => {
-  return state.categoryList.filter(item => item.level === 1)
+// 二级分类列表
+const secondLevelCategories = computed(() => {
+  return state.categoryList.filter(item => item.level === 2)
 })
 
 // 调试：在组件挂载后立即检查数据
@@ -124,6 +116,7 @@ onMounted(() => {
 
 const formRules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
+  parentId: [{ required: true, message: '请选择二级分类', trigger: 'change' }],
   rank: [{ required: true, message: '请输入优先值', trigger: 'blur' }]
 }
 
@@ -159,10 +152,12 @@ const loadCategoryList = async () => {
 
 const handleAdd = () => {
   state.dialogType = 'add'
+  // 默认选中第一个二级分类
+  const firstSecondLevel = secondLevelCategories.value[0]
   state.form = {
     id: null,
     name: '',
-    parentId: 0,
+    parentId: firstSecondLevel ? firstSecondLevel.id : 0,
     rank: 0
   }
   state.dialogVisible = true
@@ -185,10 +180,10 @@ const handleSubmit = async () => {
 
   state.submitting = true
   try {
-    // 构建正确的参数格式
+    // 构建正确的参数格式（固定为三级分类）
     const params = {
       ...state.form,
-      level: state.form.parentId === 0 ? 1 : 2
+      level: 3
     }
     
     // 新增时移除id字段

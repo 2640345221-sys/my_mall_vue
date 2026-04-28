@@ -114,15 +114,11 @@ const router =createRouter({
             component:()=>import('@/views/admin/CategoryManage.vue')
         },
         {
-            path:'/admin/carousel',
-            name:'AdminCarousel',
-            component:()=>import('@/views/admin/CarouselManage.vue')
-        },
-        {
             path:'/admin/index-config',
             name:'AdminIndexConfig',
             component:()=>import('@/views/admin/IndexConfigManage.vue')
-        }
+        },
+
     ]
 })
 

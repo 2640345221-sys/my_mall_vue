@@ -73,9 +73,23 @@
             v-model:current-page="state.page"
             v-model:page-size="state.pageSize"
             :total="state.total"
-            layout="total, prev, pager, next, jumper"
+            layout="prev, pager, next"
+            :prev-text="'上一页'"
+            :next-text="'下一页'"
             @current-change="handleCurrentChange"
           />
+          <div class="pagination-info">
+            <span class="jump-label">跳转到</span>
+            <el-input-number
+              v-model="state.jumpPage"
+              :min="1"
+              :max="getTotalPages() || 1"
+              size="small"
+              style="width: 80px; margin: 0 8px"
+            />
+            <span class="total-pages">共 {{ getTotalPages() || 0 }} 页</span>
+            <span class="total-records">共 {{ state.total }} 条</span>
+          </div>
         </div>
       </div>
     </div>
@@ -167,6 +181,7 @@ const state = reactive({
   currentOrder: null as any,
   shipVisible: false,
   shipLoading: false,
+  jumpPage: 1,
   shipForm: {
     orderNo: '',
     company: '',
@@ -284,7 +299,53 @@ const handleCurrentChange = (val: number) => {
   loadOrderList()
 }
 
+// 计算总页数
+const getTotalPages = (): number => {
+  const total = Number(state.total) || 0
+  const pageSize = Number(state.pageSize) || 10
+  
+  if (total <= 0 || pageSize <= 0) {
+    return 0
+  }
+  
+  return Math.ceil(total / pageSize)
+}
+
 onMounted(() => {
   loadOrderList()
 })
 </script>
+
+<style scoped>
+.search-bar {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 10px;
+}
+
+.pagination {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #606266;
+  font-size: 14px;
+}
+
+.jump-label {
+  color: #606266;
+}
+
+.total-pages,
+.total-records {
+  color: #606266;
+  margin-left: 8px;
+}
+</style>
