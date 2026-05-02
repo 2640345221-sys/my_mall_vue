@@ -195,7 +195,7 @@ const loadOrderList = async (isRefresh = false) => {
     
     const records = res.records || []
     state.list = isRefresh ? records : [...state.list, ...records]
-    state.total = res.totalCount || 0
+    state.total = res.total || 0
     state.finished = state.list.length >= state.total
   } catch (error) {
     ElMessage.error('加载订单失败')

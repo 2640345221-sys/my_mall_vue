@@ -347,7 +347,7 @@ const loadOrderList = async () => {
     }
     const res = await adminOrderStore.getPage(params)
     state.orderList = res.records || []
-    state.total = res.totalCount || 0
+    state.total = res.total || 0
   } catch (error) {
     ElMessage.error('加载订单列表失败')
   } finally {

@@ -1,14 +1,11 @@
 <template>
   <div class="category-container">
-    <!-- 顶部搜索栏 -->
+    <!-- 顶部导航栏 -->
     <header class="category-header">
       <div class="header-left" @click="goHome">
         <el-icon><ArrowLeft /></el-icon>
       </div>
-      <div class="header-search" @click="goToSearch">
-        <el-icon><Search /></el-icon>
-        <span>搜索商品</span>
-      </div>
+      <div class="header-title">商品分类</div>
       <div class="header-right">
         <el-icon><MoreFilled /></el-icon>
       </div>
@@ -185,10 +182,16 @@ onMounted(() => {
   right: 0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 10px 15px;
   background: white;
   border-bottom: 1px solid #eee;
   z-index: 1000;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .header-left,

@@ -3,21 +3,21 @@ import {ref} from 'vue'
 import {defineStore} from 'pinia'
 
 export interface Goods{
-    goodsId:number
-    goodsName:string
-    goodsIntro?:string
-    goodsCategoryId?:number
-    goodsCoverImg?:string
+    id:number
+    name:string
+    intro?:string
+    categoryId?:number
+    coverImg?:string
     carousel?:Array<string>
-    goodsDetailContent?:string
+    detailContent?:string
     originalPrice?:number
     sellingPrice?:number
     stockNum?:number
     tag?:string
-    goodsSellStatus?:boolean
+    sellStatus?:boolean
 }
 export interface PageResult{
-    totalCount:number
+    total:number
     totalPage:number
     records?:Array<any>
 }

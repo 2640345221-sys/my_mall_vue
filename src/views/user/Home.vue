@@ -20,20 +20,7 @@
       </div>
     </header>
 
-    <!-- 分类导航 -->
-    <div class="category-section">
-      <div
-        class="category-item"
-        v-for="item in state.categoryList"
-        :key="item.id"
-        @click="goToCategoryDetail(item.id)"
-      >
-        <div class="category-icon">
-          <el-icon><Goods /></el-icon>
-        </div>
-        <span>{{ item.name }}</span>
-      </div>
-    </div>
+
 
     <!-- 新品上线 -->
     <div class="goods-section">

@@ -10,7 +10,30 @@
     </header>
 
     <!-- 商品内容 -->
-    <div class="detail-content" v-if="state.goods.goodsId">
+    <div class="detail-content" v-if="state.goods.id">
+      <!-- 商品图片 -->
+      <div class="goods-images">
+        <!-- 轮播图 -->
+        <div class="goods-swipe" v-if="state.goods.carousel && state.goods.carousel.length > 0">
+          <img 
+            v-for="(img, index) in state.goods.carousel" 
+            :key="index" 
+            :src="img" 
+            :alt="state.goods.name"
+            class="swipe-image"
+          />
+        </div>
+        <!-- 主图 -->
+        <div class="goods-main-image" v-else-if="state.goods.coverImg">
+          <img :src="state.goods.coverImg" :alt="state.goods.name" class="main-image" />
+        </div>
+        <!-- 默认图片 -->
+        <div class="goods-default-image" v-else>
+          <el-icon><Picture /></el-icon>
+          <span>暂无图片</span>
+        </div>
+      </div>
+
       <!-- 商品信息 -->
       <div class="goods-info">
         <div class="goods-price">
@@ -20,8 +43,8 @@
             ¥{{ state.goods.originalPrice }}
           </span>
         </div>
-        <h1 class="goods-name">{{ state.goods.goodsName }}</h1>
-        <p class="goods-intro">{{ state.goods.goodsIntro }}</p>
+        <h1 class="goods-name">{{ state.goods.name }}</h1>
+        <p class="goods-intro">{{ state.goods.intro }}</p>
         <div class="goods-tags">
           <el-tag v-if="state.goods.tag" type="danger" size="small">{{ state.goods.tag }}</el-tag>
           <el-tag type="info" size="small">免邮费</el-tag>
@@ -31,11 +54,7 @@
 
       <!-- 商品详情 -->
       <div class="goods-detail-content">
-        <div class="detail-tabs">
-          <div class="tab-item active">商品详情</div>
-          <div class="tab-item">规格参数</div>
-        </div>
-        <div class="detail-html" v-html="state.goods.goodsDetailContent"></div>
+        <div class="detail-html" v-html="state.goods.detailContent"></div>
       </div>
     </div>
 
@@ -43,7 +62,7 @@
     <el-skeleton :rows="10" animated v-else />
 
     <!-- 底部操作栏 -->
-    <div class="action-bar" v-if="state.goods.goodsId">
+    <div class="action-bar" v-if="state.goods.id">
       <div class="action-left">
         <div class="action-item" @click="goToHome">
           <el-icon><HomeFilled /></el-icon>
@@ -123,12 +142,12 @@ const goToCart = () => {
 
 // 加入购物车
 const handleAddCart = async () => {
-  if (!state.goods.goodsId) return
+  if (!state.goods.id) return
 
   state.adding = true
   try {
     await cartStore.addItem({
-      goodsId: state.goods.goodsId,
+      goodsId: state.goods.id,
       goodsCount: 1
     })
     ElMessage.success('加入购物车成功')
@@ -141,11 +160,11 @@ const handleAddCart = async () => {
 
 // 立即购买
 const handleBuyNow = async () => {
-  if (!state.goods.goodsId) return
+  if (!state.goods.id) return
 
   try {
     await cartStore.addItem({
-      goodsId: state.goods.goodsId,
+      goodsId: state.goods.id,
       goodsCount: 1
     })
     // 跳转到购物车
@@ -194,11 +213,15 @@ onMounted(() => {
   padding-top: 50px;
 }
 
-.goods-swipe img,
-.goods-cover {
-  width: 100%;
-  height: 300px;
-  object-fit: cover;
+.swipe-image,
+.main-image {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .goods-info {

@@ -16,9 +16,6 @@
         <div class="user-name">{{ state.user.nickName || state.user.loginName }}</div>
         <div class="user-sign">{{ state.user.introduceSign || '这个人很懒，什么都没写~' }}</div>
       </div>
-      <div class="user-arrow">
-        <el-icon><ArrowRight /></el-icon>
-      </div>
     </div>
 
     <!-- 骨架屏加载 -->

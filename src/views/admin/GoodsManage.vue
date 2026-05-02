@@ -404,11 +404,12 @@ const loadGoodsList = async () => {
       categoryId: state.searchCategory || undefined
     }
     const res = await adminGoodsStore.pageGoods(params)
+    console.log(res)
     console.log('API响应数据:', res)
     
     // 根据实际响应结构调整数据赋值
     state.goodsList = res.records || []
-    state.total = res.totalCount || 0
+    state.total = res.total || 0
     
     console.log('最终商品列表:', state.goodsList)
     console.log('最终总数:', state.total)

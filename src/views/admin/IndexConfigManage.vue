@@ -167,7 +167,7 @@ const loadConfigList = async () => {
     
     if (res && res.records) {
       state.configList = res.records || []
-      state.total = res.totalCount || 0
+      state.total = res.total || 0
     } else if (Array.isArray(res)) {
       state.configList = res
       state.total = res.length
