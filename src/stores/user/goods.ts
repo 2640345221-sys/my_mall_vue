@@ -13,7 +13,6 @@ export interface Goods{
     originalPrice?:number
     sellingPrice?:number
     stockNum?:number
-    tag?:string
     sellStatus?:boolean
 }
 export interface PageResult{

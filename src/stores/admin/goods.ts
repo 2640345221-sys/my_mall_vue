@@ -11,7 +11,7 @@ export interface GoodsPageDTO{
 
 export const useAdminGoodsStore=defineStore('adminGoods',()=>{
     const insertGoods=async(goods:Goods)=>{
-        await request.post('/admin/goods/save',goods)
+        await request.post('/admin/goods',goods)
     }
     const getGoodsById=async(id:number):Promise<Goods>=>{
         const res=await request.get(`/admin/goods/info/${id}`)

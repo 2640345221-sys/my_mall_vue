@@ -136,9 +136,7 @@
         <el-form-item label="库存" prop="stockNum">
           <el-input-number v-model="state.form.stockNum" :min="0" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="商品标签" prop="tag">
-          <el-input v-model="state.form.tag" placeholder="请输入商品标签" />
-        </el-form-item>
+
         <el-form-item label="商品图片" prop="coverImg">
           <el-upload
             class="avatar-uploader"
@@ -250,7 +248,7 @@ const state = reactive({
     coverImg: '',
     detailContent: '',
     sellStatus: false,
-    tag: '',
+
     carousel: null
   }
 })

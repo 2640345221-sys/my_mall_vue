@@ -39,7 +39,7 @@
           </el-button>
         </div>
 
-        <!-- 订单状态统计 -->
+        <!-- 订单状态分类 -->
         <div class="status-stats">
           <div
             class="stat-item"
@@ -49,7 +49,6 @@
             @click="handleStatusFilter(stat.status)"
           >
             <span class="stat-label">{{ stat.label }}</span>
-            <span class="stat-count">{{ stat.count }}</span>
           </div>
         </div>
 
@@ -295,12 +294,12 @@ const state = reactive({
     trackingNo: ''
   },
   statusStats: [
-    { label: '全部', status: null, count: 0 },
-    { label: '待付款', status: 0, count: 0 },
-    { label: '待发货', status: 1, count: 0 },
-    { label: '待收货', status: 2, count: 0 },
-    { label: '已完成', status: 3, count: 0 },
-    { label: '已取消', status: 4, count: 0 }
+    { label: '全部', status: null },
+    { label: '待付款', status: 0 },
+    { label: '待发货', status: 1 },
+    { label: '待收货', status: 2 },
+    { label: '已完成', status: 3 },
+    { label: '已取消', status: 4 }
   ]
 })
 
@@ -477,7 +476,6 @@ onMounted(() => {
 
 .stat-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
   padding: 12px 24px;
   background: #f5f7fa;

@@ -88,15 +88,12 @@
         <el-form-item label="选择商品" prop="goodsId">
           <el-select
             v-model="state.form.goodsId"
-            placeholder="选择商品"
+            placeholder="请选择商品"
             style="width: 100%"
             filterable
-            remote
-            :remote-method="searchGoods"
-            :loading="state.goodsLoading"
           >
             <el-option
-              v-for="item in state.goodsOptions"
+              v-for="item in state.allGoodsList"
               :key="item.id"
               :label="item.name"
               :value="item.id"
@@ -124,9 +121,11 @@ import { Plus } from '@element-plus/icons-vue'
 import AdminSidebar from '@/components/admin/Sidebar.vue'
 import AdminHeader from '@/components/admin/Header.vue'
 import { useAdminIndexStore } from '@/stores/admin/index'
+import { useAdminGoodsStore } from '@/stores/admin/goods'
 
 const formRef = ref()
 const adminIndexStore = useAdminIndexStore()
+const adminGoodsStore = useAdminGoodsStore()
 
 const state = reactive({
   configType: '4',
@@ -135,8 +134,7 @@ const state = reactive({
   dialogVisible: false,
   dialogType: 'add' as 'add' | 'edit',
   submitting: false,
-  goodsLoading: false,
-  goodsOptions: [] as any[],
+  allGoodsList: [] as any[],
   page: 1,
   pageSize: 10,
   total: 0,
@@ -192,7 +190,10 @@ const searchGoods = async (keyword: string) => {
       goodsName: keyword
     })
     
-    if (res && res.records) {
+    // 根据实际响应结构调整数据赋值
+    if (res && res.data?.records) {
+      state.goodsOptions = res.data.records
+    } else if (res && res.records) {
       state.goodsOptions = res.records
     } else if (Array.isArray(res)) {
       state.goodsOptions = res
@@ -302,8 +303,33 @@ const getTotalPages = (): number => {
   return Math.ceil(total / pageSize)
 }
 
+// 加载所有商品列表
+const loadAllGoods = async () => {
+  try {
+    const res = await adminGoodsStore.pageGoods({
+      pageNumber: 1,
+      pageSize: 1000, // 加载足够多的商品
+      goodsName: ''
+    })
+    
+    // 根据实际响应结构调整数据赋值
+    if (res && res.data?.records) {
+      state.allGoodsList = res.data.records
+    } else if (res && res.records) {
+      state.allGoodsList = res.records
+    } else if (Array.isArray(res)) {
+      state.allGoodsList = res
+    } else {
+      state.allGoodsList = []
+    }
+  } catch (error: any) {
+    console.error('加载商品列表失败:', error)
+  }
+}
+
 onMounted(() => {
   loadConfigList()
+  loadAllGoods()
 })
 </script>
 
