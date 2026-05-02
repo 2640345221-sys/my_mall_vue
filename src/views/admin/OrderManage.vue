@@ -11,6 +11,7 @@
             placeholder="请输入订单号"
             style="width: 200px"
             clearable
+            @keyup.enter="handleSearch"
           />
           <el-select v-model="state.searchStatus" placeholder="订单状态" clearable style="width: 150px">
             <el-option label="待付款" :value="0" />
@@ -19,19 +20,46 @@
             <el-option label="已完成" :value="3" />
             <el-option label="已取消" :value="4" />
           </el-select>
+          <el-date-picker
+            v-model="state.dateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+            style="width: 240px"
+          />
           <el-button type="primary" @click="handleSearch">
             <el-icon><Search /></el-icon>
-            搜索
+            查询
+          </el-button>
+          <el-button @click="handleReset">
+            <el-icon><Refresh /></el-icon>
+            重置
           </el-button>
         </div>
 
+        <!-- 订单状态统计 -->
+        <div class="status-stats">
+          <div
+            class="stat-item"
+            v-for="stat in state.statusStats"
+            :key="stat.status"
+            :class="{ active: state.searchStatus === stat.status }"
+            @click="handleStatusFilter(stat.status)"
+          >
+            <span class="stat-label">{{ stat.label }}</span>
+            <span class="stat-count">{{ stat.count }}</span>
+          </div>
+        </div>
+
         <!-- 数据表格 -->
-        <el-table :data="state.orderList" v-loading="state.loading" border>
+        <el-table :data="state.orderList" v-loading="state.loading"  style="margin-top: 16px">
           <el-table-column prop="orderNo" label="订单号" min-width="180" />
           <el-table-column prop="userName" label="用户" min-width="120" />
           <el-table-column prop="totalPrice" label="订单金额" min-width="100">
             <template #default="scope">
-              ¥{{ scope.row.totalPrice }}
+              ¥{{ (scope.row.totalPrice / 100).toFixed(2) }}
             </template>
           </el-table-column>
           <el-table-column prop="payType" label="支付方式" min-width="100">
@@ -47,7 +75,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="createTime" label="下单时间" min-width="180" />
-          <el-table-column label="操作" min-width="200" fixed="right">
+          <el-table-column label="操作" min-width="280" fixed="right">
             <template #default="scope">
               <el-button type="primary" link @click="handleDetail(scope.row)">
                 详情
@@ -60,7 +88,20 @@
               >
                 发货
               </el-button>
-              <el-button type="danger" link @click="handleCancel(scope.row)">
+              <el-button
+                v-if="scope.row.status === 2"
+                type="warning"
+                link
+                @click="handleConfirmReceive(scope.row)"
+              >
+                确认收货
+              </el-button>
+              <el-button
+                v-if="scope.row.status === 0 || scope.row.status === 1"
+                type="danger"
+                link
+                @click="handleCancel(scope.row)"
+              >
                 取消
               </el-button>
             </template>
@@ -97,39 +138,97 @@
     <!-- 订单详情弹窗 -->
     <el-dialog v-model="state.detailVisible" title="订单详情" width="700px">
       <div v-if="state.currentOrder" class="order-detail">
+        <!-- 订单状态 -->
+        <div class="detail-section status-section">
+          <el-tag :type="getStatusType(state.currentOrder.status)" size="large">
+            {{ getStatusText(state.currentOrder.status) }}
+          </el-tag>
+        </div>
+
+        <!-- 订单信息 -->
         <div class="detail-section">
           <h4>订单信息</h4>
-          <p><span>订单号：</span>{{ state.currentOrder.orderNo }}</p>
-          <p><span>下单时间：</span>{{ state.currentOrder.createTime }}</p>
-          <p><span>订单状态：</span>
-            <el-tag :type="getStatusType(state.currentOrder.status)">
-              {{ getStatusText(state.currentOrder.status) }}
-            </el-tag>
-          </p>
+          <div class="detail-row">
+            <span class="label">订单号：</span>
+            <span class="value">{{ state.currentOrder.orderNo }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">下单时间：</span>
+            <span class="value">{{ state.currentOrder.createTime }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">支付方式：</span>
+            <span class="value">{{ getPayTypeText(state.currentOrder.payType) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">订单状态：</span>
+            <span class="value">
+              <el-tag :type="getStatusType(state.currentOrder.status)">
+                {{ getStatusText(state.currentOrder.status) }}
+              </el-tag>
+            </span>
+          </div>
         </div>
+
+        <!-- 收货信息 -->
         <div class="detail-section">
           <h4>收货信息</h4>
-          <p><span>收货人：</span>{{ state.currentOrder.userName }}</p>
-          <p><span>手机号：</span>{{ state.currentOrder.userPhone }}</p>
-          <p><span>收货地址：</span>{{ state.currentOrder.address }}</p>
+          <div class="detail-row">
+            <span class="label">收货人：</span>
+            <span class="value">{{ state.currentOrder.userName }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">手机号：</span>
+            <span class="value">{{ state.currentOrder.userPhone }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">收货地址：</span>
+            <span class="value">{{ state.currentOrder.address }}</span>
+          </div>
         </div>
+
+        <!-- 商品信息 -->
         <div class="detail-section">
           <h4>商品信息</h4>
           <el-table :data="state.currentOrder.items" border size="small">
             <el-table-column prop="name" label="商品名称" />
             <el-table-column prop="price" label="单价" width="100">
-              <template #default="scope">¥{{ scope.row.price }}</template>
+              <template #default="scope">¥{{ (scope.row.price / 100).toFixed(2) }}</template>
             </el-table-column>
             <el-table-column prop="count" label="数量" width="80" />
             <el-table-column label="小计" width="100">
-              <template #default="scope">¥{{ scope.row.price * scope.row.count }}</template>
+              <template #default="scope">¥{{ ((scope.row.price * scope.row.count) / 100).toFixed(2) }}</template>
             </el-table-column>
           </el-table>
         </div>
+
+        <!-- 金额信息 -->
         <div class="detail-section total">
-          <p><span>商品总额：</span>¥{{ state.currentOrder.totalPrice }}</p>
-          <p><span>运费：</span>¥0</p>
-          <p class="final-total"><span>实付金额：</span>¥{{ state.currentOrder.totalPrice }}</p>
+          <div class="detail-row">
+            <span class="label">商品总额：</span>
+            <span class="value">¥{{ (state.currentOrder.totalPrice / 100).toFixed(2) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">运费：</span>
+            <span class="value">¥0.00</span>
+          </div>
+          <div class="detail-row final-total">
+            <span class="label">实付金额：</span>
+            <span class="value">¥{{ (state.currentOrder.totalPrice / 100).toFixed(2) }}</span>
+          </div>
+        </div>
+
+        <!-- 物流信息 -->
+        <div class="detail-section" v-if="state.currentOrder.shipCompany">
+          <h4>物流信息</h4>
+          <div class="detail-row">
+            <span class="label">快递公司：</span>
+            <span class="value">{{ state.currentOrder.shipCompany }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">快递单号：</span>
+            <span class="value">{{ state.currentOrder.trackingNo }}</span>
+          </div>
         </div>
       </div>
     </el-dialog>
@@ -137,7 +236,10 @@
     <!-- 发货弹窗 -->
     <el-dialog v-model="state.shipVisible" title="订单发货" width="500px">
       <el-form :model="state.shipForm" label-width="100px">
-        <el-form-item label="快递公司">
+        <el-form-item label="订单号">
+          <el-input v-model="state.shipForm.orderNo" disabled />
+        </el-form-item>
+        <el-form-item label="快递公司" prop="company" :rules="[{ required: true, message: '请选择快递公司', trigger: 'change' }]">
           <el-select v-model="state.shipForm.company" placeholder="选择快递公司" style="width: 100%">
             <el-option label="顺丰速运" value="顺丰速运" />
             <el-option label="中通快递" value="中通快递" />
@@ -145,9 +247,10 @@
             <el-option label="申通快递" value="申通快递" />
             <el-option label="韵达快递" value="韵达快递" />
             <el-option label="EMS" value="EMS" />
+            <el-option label="京东物流" value="京东物流" />
           </el-select>
         </el-form-item>
-        <el-form-item label="快递单号">
+        <el-form-item label="快递单号" prop="trackingNo" :rules="[{ required: true, message: '请输入快递单号', trigger: 'blur' }]">
           <el-input v-model="state.shipForm.trackingNo" placeholder="请输入快递单号" />
         </el-form-item>
       </el-form>
@@ -162,12 +265,14 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Refresh } from '@element-plus/icons-vue'
 import AdminSidebar from '@/components/admin/Sidebar.vue'
 import AdminHeader from '@/components/admin/Header.vue'
-import axios from '@/utils/axios'
+import { useAdminOrderStore } from '@/stores/admin/order'
+
+const adminOrderStore = useAdminOrderStore()
 
 const state = reactive({
   orderList: [] as any[],
@@ -177,6 +282,7 @@ const state = reactive({
   total: 0,
   searchOrderNo: '',
   searchStatus: null as number | null,
+  dateRange: [] as string[],
   detailVisible: false,
   currentOrder: null as any,
   shipVisible: false,
@@ -184,9 +290,18 @@ const state = reactive({
   jumpPage: 1,
   shipForm: {
     orderNo: '',
+    orderId: null as number | null,
     company: '',
     trackingNo: ''
-  }
+  },
+  statusStats: [
+    { label: '全部', status: null, count: 0 },
+    { label: '待付款', status: 0, count: 0 },
+    { label: '待发货', status: 1, count: 0 },
+    { label: '待收货', status: 2, count: 0 },
+    { label: '已完成', status: 3, count: 0 },
+    { label: '已取消', status: 4, count: 0 }
+  ]
 })
 
 const getStatusType = (status: number) => {
@@ -216,24 +331,23 @@ const getPayTypeText = (type: number) => {
     1: '支付宝',
     2: '微信支付'
   }
-  return textMap[type] || '未知'
+  return textMap[type] || '未支付'
 }
 
 const loadOrderList = async () => {
   state.loading = true
   try {
-    const params = new URLSearchParams()
-    params.append('pageNumber', String(state.page))
-    params.append('pageSize', String(state.pageSize))
-    if (state.searchOrderNo) {
-      params.append('orderNo', state.searchOrderNo)
+    const params = {
+      pageNumber: state.page,
+      pageSize: state.pageSize,
+      orderNo: state.searchOrderNo || '',
+      orderStatus: state.searchStatus !== null ? state.searchStatus : undefined,
+      startTime: state.dateRange && state.dateRange.length === 2 ? state.dateRange[0] : undefined,
+      endTime: state.dateRange && state.dateRange.length === 2 ? state.dateRange[1] : undefined
     }
-    if (state.searchStatus !== null) {
-      params.append('status', String(state.searchStatus))
-    }
-    const res = await axios.get(`/admin/order/page?${params.toString()}`)
+    const res = await adminOrderStore.getPage(params)
     state.orderList = res.records || []
-    state.total = res.total || 0
+    state.total = res.totalCount || 0
   } catch (error) {
     ElMessage.error('加载订单列表失败')
   } finally {
@@ -241,15 +355,31 @@ const loadOrderList = async () => {
   }
 }
 
+
+
 const handleSearch = () => {
+  state.page = 1
+  loadOrderList()
+}
+
+const handleReset = () => {
+  state.searchOrderNo = ''
+  state.searchStatus = null
+  state.dateRange = []
+  state.page = 1
+  loadOrderList()
+}
+
+const handleStatusFilter = (status: number | null) => {
+  state.searchStatus = status
   state.page = 1
   loadOrderList()
 }
 
 const handleDetail = async (row: any) => {
   try {
-    const res = await axios.get(`/admin/orders/${row.orderNo}`)
-    state.currentOrder = res.data
+    const res = await adminOrderStore.getOrder(row.orderNo)
+    state.currentOrder = res
     state.detailVisible = true
   } catch (error) {
     ElMessage.error('加载订单详情失败')
@@ -258,6 +388,7 @@ const handleDetail = async (row: any) => {
 
 const handleShip = (row: any) => {
   state.shipForm.orderNo = row.orderNo
+  state.shipForm.orderId = row.id
   state.shipForm.company = ''
   state.shipForm.trackingNo = ''
   state.shipVisible = true
@@ -270,7 +401,7 @@ const handleShipSubmit = async () => {
   }
   state.shipLoading = true
   try {
-    await axios.post('/admin/orders/ship', state.shipForm)
+    await adminOrderStore.checkOut([state.shipForm.orderId!])
     ElMessage.success('发货成功')
     state.shipVisible = false
     loadOrderList()
@@ -281,10 +412,23 @@ const handleShipSubmit = async () => {
   }
 }
 
+const handleConfirmReceive = async (row: any) => {
+  try {
+    await ElMessageBox.confirm('确认该订单已收货？', '提示', { type: 'warning' })
+    await adminOrderStore.checkDone([row.orderNo])
+    ElMessage.success('确认收货成功')
+    loadOrderList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('确认收货失败')
+    }
+  }
+}
+
 const handleCancel = async (row: any) => {
   try {
     await ElMessageBox.confirm('确定要取消该订单吗？', '提示', { type: 'warning' })
-    await axios.put(`/admin/orders/cancel/${row.orderNo}`)
+    await adminOrderStore.close([row.orderNo])
     ElMessage.success('取消成功')
     loadOrderList()
   } catch (error) {
@@ -299,7 +443,6 @@ const handleCurrentChange = (val: number) => {
   loadOrderList()
 }
 
-// 计算总页数
 const getTotalPages = (): number => {
   const total = Number(state.total) || 0
   const pageSize = Number(state.pageSize) || 10
@@ -321,6 +464,45 @@ onMounted(() => {
   margin-bottom: 16px;
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.status-stats {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 4px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 24px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.stat-item:hover {
+  background: #e6f7ff;
+}
+
+.stat-item.active {
+  background: #1baeae;
+  color: white;
+}
+
+.stat-label {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.stat-count {
+  font-size: 20px;
+  font-weight: bold;
 }
 
 .pagination {
@@ -347,5 +529,63 @@ onMounted(() => {
 .total-records {
   color: #606266;
   margin-left: 8px;
+}
+
+.order-detail {
+  padding: 10px 0;
+}
+
+.status-section {
+  text-align: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.detail-section {
+  margin-bottom: 20px;
+}
+
+.detail-section h4 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+  color: #333;
+}
+
+.detail-row {
+  display: flex;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.detail-row .label {
+  color: #999;
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.detail-row .value {
+  color: #333;
+  flex: 1;
+}
+
+.detail-section.total {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 4px;
+}
+
+.final-total {
+  font-size: 16px;
+  font-weight: bold;
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+  margin-top: 8px;
+}
+
+.final-total .value {
+  color: #f44;
+  font-size: 18px;
 }
 </style>

@@ -51,31 +51,9 @@
         </div>
       </div>
 
-      <!-- 联系方式 -->
-      <div class="section">
-        <h2 class="section-title">
-          <el-icon><Message /></el-icon>
-          联系我们
-        </h2>
-        <div class="contact-list">
-          <div class="contact-item">
-            <span class="label">客服电话</span>
-            <span class="value">400-123-4567</span>
-          </div>
-          <div class="contact-item">
-            <span class="label">客服邮箱</span>
-            <span class="value">service@mymall.com</span>
-          </div>
-          <div class="contact-item">
-            <span class="label">工作时间</span>
-            <span class="value">周一至周日 9:00-21:00</span>
-          </div>
-        </div>
-      </div>
-
       <!-- 版权信息 -->
       <div class="footer">
-        <p>© 2024 My Mall. All rights reserved.</p>
+        <p>© 2026 My Mall. All rights reserved.</p>
         <p>本系统仅供学习交流使用</p>
       </div>
     </div>

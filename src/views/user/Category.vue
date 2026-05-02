@@ -125,6 +125,7 @@ const loadCategoryData = async () => {
   state.loading = true
   try {
     const res = await categoryStore.getCategory()
+    console.log(res)
     state.categoryList = res || []
     // 默认选中第一个分类
     if (state.categoryList.length > 0) {
@@ -214,12 +215,15 @@ onMounted(() => {
 
 .category-content {
   display: flex;
-  margin-top: 50px;
-  overflow: hidden;
+  margin-top: 60px;  /* 增加margin，确保完全避开搜索栏 */
+  height: calc(100vh - 120px);  /* 设置固定高度，确保内容完全显示 */
+  overflow-y: auto;  /* 允许垂直滚动 */
 }
 
 .category-nav {
   width: 28%;
+  height: 100%;  /* 确保导航区域占满高度 */
+  overflow-y: auto;  /* 允许导航区域滚动 */
   height: 100%;
   overflow-y: auto;
   background: #f8f8f8;
@@ -242,7 +246,7 @@ onMounted(() => {
   height: 100%;
   padding: 15px;
   background: white;
-  overflow-y: auto;
+  overflow-y: auto;  /* 允许详情区域滚动 */
 }
 
 .sub-category {

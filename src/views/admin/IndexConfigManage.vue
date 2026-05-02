@@ -123,9 +123,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import AdminSidebar from '@/components/admin/Sidebar.vue'
 import AdminHeader from '@/components/admin/Header.vue'
-import axios from '@/utils/axios'
+import { useAdminIndexStore } from '@/stores/admin/index'
 
 const formRef = ref()
+const adminIndexStore = useAdminIndexStore()
 
 const state = reactive({
   configType: '4',
@@ -158,17 +159,15 @@ const formRules = {
 const loadConfigList = async () => {
   state.loading = true
   try {
-    const res = await axios.get('/admin/indexConfig', {
-      params: {
-        pageNumber: state.page,
-        pageSize: state.pageSize,
-        type: state.configType
-      }
+    const res = await adminIndexStore.getIndexConfigPage({
+      pageNumber: state.page,
+      pageSize: state.pageSize,
+      type: parseInt(state.configType)
     })
     
     if (res && res.records) {
       state.configList = res.records || []
-      state.total = res.total || 0
+      state.total = res.totalCount || 0
     } else if (Array.isArray(res)) {
       state.configList = res
       state.total = res.length
@@ -187,12 +186,10 @@ const searchGoods = async (keyword: string) => {
   if (!keyword) return
   state.goodsLoading = true
   try {
-    const res = await axios.get('/admin/goods', {
-      params: {
-        pageNumber: 1,
-        pageSize: 20,
-        keyword: keyword
-      }
+    const res = await adminGoodsStore.pageGoods({
+      pageNumber: 1,
+      pageSize: 20,
+      goodsName: keyword
     })
     
     if (res && res.records) {
@@ -259,10 +256,10 @@ const handleSubmit = async () => {
     }
 
     if (state.dialogType === 'add') {
-      await axios.post('/admin/indexConfig', params)
+      await adminIndexStore.addIndexConfig(params)
       ElMessage.success('新增成功')
     } else {
-      await axios.put('/admin/indexConfig', params)
+      await adminIndexStore.updateIndexConfig(params)
       ElMessage.success('修改成功')
     }
 
@@ -278,11 +275,7 @@ const handleSubmit = async () => {
 const handleDelete = async (row: any) => {
   try {
     await ElMessageBox.confirm('确定要删除该配置吗？', '提示', { type: 'warning' })
-    await axios.delete('/admin/indexConfig', {
-      params: {
-        ids: [row.id]
-      }
-    })
+    await adminIndexStore.deleteIndexConfig([row.id])
     ElMessage.success('删除成功')
     loadConfigList()
   } catch (error: any) {

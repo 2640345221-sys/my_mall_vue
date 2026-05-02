@@ -79,6 +79,11 @@ const router =createRouter({
             component:()=>import('@/views/user/Setting.vue')
         },
         {
+            path:'/user/profile',
+            name:'Profile',
+            component:()=>import('@/views/user/Profile.vue')
+        },
+        {
             path:'/about',
             name:'About',
             component:()=>import('@/views/user/About.vue')
@@ -123,7 +128,7 @@ const router =createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
     const token = localStorage.getItem('token')
     const adminToken = localStorage.getItem('adminToken')
     

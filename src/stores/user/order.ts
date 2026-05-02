@@ -63,7 +63,7 @@ export interface OrderCartDTO{
     price:number
     count:number
 }
-export const userOrderStore=defineStore('order',()=>{
+export const useOrderStore=defineStore('order',()=>{
     const saveOrder=async(orderDTO:OrderDTO)=>{
         const res=await request.post('/user/order/saveOrder',orderDTO)
         return res
@@ -78,11 +78,11 @@ export const userOrderStore=defineStore('order',()=>{
         const res=await request.get(`/user/order/${orderNo}`)
         return res
     }
-    const getPage=async(orderPageDTO:OrderPageDTO):Promise<PageResult>=>{
+    const getOrderPage=async(orderPageDTO:OrderPageDTO):Promise<PageResult>=>{
         const res=await request.get('/user/order/page',{params:orderPageDTO})
         return res
     }
-    const paySuccess=async(orderpayDTO:OrderPayDTO)=>{
+    const payOrder=async(orderpayDTO:OrderPayDTO)=>{
         await request.get('/user/order/paySuccess',{params:orderpayDTO})
     }
     return{
@@ -90,8 +90,8 @@ export const userOrderStore=defineStore('order',()=>{
         cancelOrder,
         confirmOrder,
         getOrderDetail,
-        getPage,
-        paySuccess,
+        getOrderPage,
+        payOrder,
     }
 
 })

@@ -27,7 +27,7 @@
       </div>
       <div class="address-info">
         <div class="address-header">
-          <span class="name">{{ state.order.address.userName }}</span>
+          <span class="name">{{ state.order.address.username }}</span>
           <span class="phone">{{ state.order.address.userPhone }}</span>
         </div>
         <div class="address-detail">
@@ -236,7 +236,7 @@ const loadOrderDetail = async () => {
 
   state.loading = true
   try {
-    const res = await orderStore.getById(orderNo as string)
+    const res = await orderStore.getOrderDetail(orderNo as string)
     state.order = res || {}
   } catch (error) {
     ElMessage.error('加载订单详情失败')

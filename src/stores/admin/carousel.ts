@@ -1,5 +1,4 @@
 import request  from "@/utils/axios"
-import {ref} from 'vue'
 import {defineStore} from 'pinia'
 import type { PageResult } from "../user/goods"
 

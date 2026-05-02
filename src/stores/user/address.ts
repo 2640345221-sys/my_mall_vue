@@ -3,10 +3,10 @@ import {ref} from 'vue'
 import {defineStore} from 'pinia'
 export interface UserAddress{
     id:number
-    userId:number
+    userId?:number
     username:string
     userPhone?:string
-    idDefault?:boolean
+    isDefault?:boolean
     province?:string
     city?:string
     region?:string
@@ -36,6 +36,10 @@ export const useAddressStore=defineStore('address',()=>{
         return res
     }
 
+    const getById=async(addressId:number):Promise<UserAddress>=>{
+        return await request.get(`/user/address/${addressId}`)
+    }
+
     return{
         allAddress,
         defaultAddress,
@@ -44,5 +48,6 @@ export const useAddressStore=defineStore('address',()=>{
         addAddress,
         deleteAddress,
         getDefaultAddresss,
+        getById,
     }
 })

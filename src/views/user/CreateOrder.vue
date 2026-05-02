@@ -13,7 +13,7 @@
     <div class="address-section" @click="goToAddress">
       <div v-if="state.address.id" class="address-info">
         <div class="address-header">
-          <span class="name">{{ state.address.userName }}</span>
+          <span class="name">{{ state.address.username }}</span>
           <span class="phone">{{ state.address.userPhone }}</span>
         </div>
         <div class="address-detail">
@@ -31,10 +31,10 @@
     <div class="goods-section">
       <h3 class="section-title">商品信息</h3>
       <div class="goods-list">
-        <div class="goods-item" v-for="item in state.goodsList" :key="item.id">
-          <img :src="item.coverImg" :alt="item.name" class="goods-img" />
+        <div class="goods-item" v-for="item in state.goodsList" :key="item.cartItemId">
+          <img :src="item.coverImg" :alt="item.goodsName" class="goods-img" />
           <div class="goods-info">
-            <div class="goods-name">{{ item.name }}</div>
+            <div class="goods-name">{{ item.goodsName }}</div>
             <div class="goods-count">x{{ item.goodsCount }}</div>
             <div class="goods-price">¥{{ item.sellingPrice }}</div>
           </div>
@@ -133,12 +133,10 @@ const init = async () => {
   // 获取购物车商品详情
   if (state.cartItemIds.length > 0) {
     try {
-      // 这里需要调用获取购物车商品详情的接口
-      // 暂时使用购物车列表接口
-      const res = await cartStore.getCartPage({ pageNumber: 1, pageSize: 100 })
+      const res = await cartStore.pageResult({ pageNumber: 1, pageSize: 100 })
       const allItems = res.records || []
       state.goodsList = allItems.filter((item: any) => 
-        state.cartItemIds.includes(item.id)
+        state.cartItemIds.includes(item.cartItemId)
       )
     } catch (error) {
       ElMessage.error('加载商品失败')
@@ -158,7 +156,7 @@ const loadAddress = async (addressId?: string) => {
       state.address = res || {}
     } else {
       // 获取默认地址
-      const res = await addressStore.getDefault()
+      const res = await addressStore.getDefaultAddresss()
       state.address = res || {}
     }
     
@@ -204,16 +202,21 @@ const handleSubmit = async () => {
     // 构建订单参数
     const params = {
       addressId: state.address.id,
-      cartItemIds: state.cartItemIds,
-      payType: state.payType
+      cartItemIds: state.cartItemIds
     }
     
     // 创建订单
-    const orderNo = await orderStore.createOrder(params)
+    const result = await orderStore.saveOrder(params)
     ElMessage.success('订单创建成功')
     
-    // 支付订单
-    await handlePay(orderNo)
+    // 获取订单号并跳转支付
+    const orderNo = result?.orderNo || result?.data?.orderNo
+    if (orderNo) {
+      await handlePay(orderNo)
+    } else {
+      // 如果没有返回订单号，跳转到订单列表
+      router.push('/order')
+    }
   } catch (error) {
     ElMessage.error('创建订单失败')
   } finally {

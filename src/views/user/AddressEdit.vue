@@ -12,8 +12,8 @@
     <!-- 地址表单 -->
     <div class="edit-form">
       <el-form :model="state.form" label-position="top" :rules="rules" ref="formRef">
-        <el-form-item label="收货人" prop="userName">
-          <el-input v-model="state.form.userName" placeholder="请输入收货人姓名" />
+        <el-form-item label="收货人" prop="username">
+          <el-input v-model="state.form.username" placeholder="请输入收货人姓名" />
         </el-form-item>
         
         <el-form-item label="手机号码" prop="userPhone">
@@ -24,7 +24,7 @@
           <el-cascader
             v-model="state.form.region"
             :options="state.regionOptions"
-            :props="{ value: 'id', label: 'name', children: 'children' }"
+            :props="{ value: 'name', label: 'name', children: 'children' }"
             placeholder="请选择省/市/区"
             style="width: 100%"
           />
@@ -42,7 +42,7 @@
         <el-form-item>
           <div class="default-switch">
             <span>设为默认地址</span>
-            <el-switch v-model="state.form.defaultFlag" />
+            <el-switch v-model="state.form.isDefault" />
           </div>
         </el-form-item>
       </el-form>
@@ -71,7 +71,7 @@ import { reactive, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { useAddressStore } from '@/stores/user/address'
+import { useAddressStore, type UserAddress } from '@/stores/user/address'
 
 const route = useRoute()
 const router = useRouter()
@@ -80,23 +80,23 @@ const formRef = ref()
 
 const state = reactive({
   type: 'add' as 'add' | 'edit',
-  addressId: null as number | null,
+  addressId:0 as number,
   from: '',
   saving: false,
   deleting: false,
   form: {
-    userName: '',
+    username: '',
     userPhone: '',
-    region: [] as number[],
+    region: [] as string[],
     detailAddress: '',
-    defaultFlag: false
+    isDefault: false
   },
   regionOptions: [] as Array<any>
 })
 
 // 表单验证规则
 const rules = {
-  userName: [
+  username: [
     { required: true, message: '请输入收货人姓名', trigger: 'blur' },
     { min: 2, max: 20, message: '姓名长度在2-20个字符之间', trigger: 'blur' }
   ],
@@ -132,69 +132,61 @@ const init = async () => {
   }
 }
 
-// 加载地区数据（简化版，实际应该从后端获取）
 const loadRegionData = () => {
   // 这里简化处理，实际应该调用后端接口获取省市区数据
   // 或者使用前端静态数据
   state.regionOptions = [
     {
-      id: 110000,
       name: '北京市',
       children: [
         {
-          id: 110100,
           name: '北京市',
           children: [
-            { id: 110101, name: '东城区' },
-            { id: 110102, name: '西城区' },
-            { id: 110105, name: '朝阳区' },
-            { id: 110106, name: '丰台区' },
-            { id: 110108, name: '海淀区' }
+            { name: '东城区' },
+            { name: '西城区' },
+            { name: '朝阳区' },
+            { name: '丰台区' },
+            { name: '海淀区' }
           ]
         }
       ]
     },
     {
-      id: 310000,
       name: '上海市',
       children: [
         {
-          id: 310100,
           name: '上海市',
           children: [
-            { id: 310101, name: '黄浦区' },
-            { id: 310104, name: '徐汇区' },
-            { id: 310105, name: '长宁区' },
-            { id: 310106, name: '静安区' },
-            { id: 310109, name: '虹口区' }
+            { name: '黄浦区' },
+            { name: '徐汇区' },
+            { name: '长宁区' },
+            { name: '静安区' },
+            { name: '虹口区' }
           ]
         }
       ]
     },
     {
-      id: 440000,
       name: '广东省',
       children: [
         {
-          id: 440100,
           name: '广州市',
           children: [
-            { id: 440103, name: '荔湾区' },
-            { id: 440104, name: '越秀区' },
-            { id: 440105, name: '海珠区' },
-            { id: 440106, name: '天河区' },
-            { id: 440111, name: '白云区' }
+            { name: '荔湾区' },
+            { name: '越秀区' },
+            { name: '海珠区' },
+            { name: '天河区' },
+            { name: '白云区' }
           ]
         },
         {
-          id: 440300,
           name: '深圳市',
           children: [
-            { id: 440303, name: '罗湖区' },
-            { id: 440304, name: '福田区' },
-            { id: 440305, name: '南山区' },
-            { id: 440306, name: '宝安区' },
-            { id: 440307, name: '龙岗区' }
+            { name: '罗湖区' },
+            { name: '福田区' },
+            { name: '南山区' },
+            { name: '宝安区' },
+            { name: '龙岗区' }
           ]
         }
       ]
@@ -207,13 +199,14 @@ const loadAddressDetail = async () => {
   try {
     const res = await addressStore.getById(state.addressId!)
     if (res) {
-      state.form.userName = res.userName || ''
+      state.form.username = res.username || ''
       state.form.userPhone = res.userPhone || ''
       state.form.detailAddress = res.detailAddress || ''
-      state.form.defaultFlag = res.defaultFlag || false
+      state.form.isDefault = res.isDefault || false
       
-      // 设置地区（需要根据后端返回的省市区名称或ID来设置）
-      // 这里简化处理，实际应该根据名称查找对应的ID
+      if (res.province && res.city && res.region) {
+        state.form.region = [res.province, res.city, res.region]
+      }
     }
   } catch (error) {
     ElMessage.error('加载地址详情失败')
@@ -232,27 +225,25 @@ const handleSave = async () => {
   
   state.saving = true
   try {
-    // 从级联选择器获取省市区信息
-    const [provinceId, cityId, regionId] = state.form.region
-    const province = findRegionById(state.regionOptions, provinceId)
-    const city = findRegionById(province?.children || [], cityId)
-    const region = findRegionById(city?.children || [], regionId)
+    const region = state.form.region
+    const province = region[0] || ''
+    const city = region[1] || ''
+    const regionName = region[2] || ''
     
-    const params = {
-      userName: state.form.userName,
+    const params:UserAddress = {
+      username: state.form.username,
       userPhone: state.form.userPhone,
-      provinceName: province?.name || '',
-      cityName: city?.name || '',
-      regionName: region?.name || '',
+      province: province,
+      city: city,
+      region: regionName,
       detailAddress: state.form.detailAddress,
-      defaultFlag: state.form.defaultFlag
+      isDefault: state.form.isDefault,
+      id:state.addressId,
+      userId:0
     }
     
     if (state.type === 'edit' && state.addressId) {
-      await addressStore.updateAddress({
-        ...params,
-        id: state.addressId
-      })
+      await addressStore.updateAddress(params)
     } else {
       await addressStore.addAddress(params)
     }
@@ -280,7 +271,7 @@ const handleDelete = async () => {
     })
     
     state.deleting = true
-    await addressStore.deleteById(state.addressId)
+    await addressStore.deleteAddress(state.addressId)
     ElMessage.success('删除成功')
     setTimeout(() => {
       goBack()
@@ -292,11 +283,6 @@ const handleDelete = async () => {
   } finally {
     state.deleting = false
   }
-}
-
-// 根据ID查找地区
-const findRegionById = (list: Array<any>, id: number) => {
-  return list.find(item => item.id === id)
 }
 
 onMounted(() => {

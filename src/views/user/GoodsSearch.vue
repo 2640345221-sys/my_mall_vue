@@ -53,13 +53,13 @@
       <div
         class="product-item"
         v-for="item in state.productList"
-        :key="item.id"
-        @click="goToDetail(item.id)"
+        :key="item.goodsId"
+        @click="goToDetail(item.goodsId)"
       >
-        <img :src="item.coverImg" :alt="item.name" class="product-img" />
+        <img :src="item.goodsCoverImg" :alt="item.goodsName" class="product-img" />
         <div class="product-info">
-          <div class="product-name">{{ item.name }}</div>
-          <div class="product-intro">{{ item.intro }}</div>
+          <div class="product-name">{{ item.goodsName }}</div>
+          <div class="product-intro">{{ item.goodsIntro }}</div>
           <div class="product-price">¥{{ item.sellingPrice }}</div>
         </div>
       </div>
@@ -215,7 +215,7 @@ const searchGoods = async (isRefresh = false) => {
     const records = res.records || []
     
     state.productList = isRefresh ? records : [...state.productList, ...records]
-    state.total = res.total || 0
+    state.total = res.totalCount || 0
     state.finished = state.productList.length >= state.total
     state.searched = true
     

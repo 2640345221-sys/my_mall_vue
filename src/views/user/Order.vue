@@ -33,8 +33,8 @@
         <!-- 订单头部 -->
         <div class="order-header-info">
           <span class="order-time">{{ order.createTime }}</span>
-          <span class="order-status" :class="getStatusClass(order.status)">
-            {{ getStatusText(order.status) }}
+          <span class="order-status" :class="getStatusClass(order.orderStatus)">
+            {{ getStatusText(order.orderStatus) }}
           </span>
         </div>
 
@@ -42,15 +42,15 @@
         <div class="order-goods">
           <div
             class="goods-item"
-            v-for="item in order.orderItems"
-            :key="item.id"
+            v-for="item in order.orderCartDTO"
+            :key="item.goodsId"
           >
-            <img :src="item.coverImg" :alt="item.name" class="goods-img" />
+            <img :src="item.coverImg" :alt="item.goodsName" class="goods-img" />
             <div class="goods-info">
-              <div class="goods-name">{{ item.name }}</div>
+              <div class="goods-name">{{ item.goodsName }}</div>
               <div class="goods-price-count">
-                <span class="price">¥{{ item.sellingPrice }}</span>
-                <span class="count">x{{ item.goodsCount }}</span>
+                <span class="price">¥{{ item.price }}</span>
+                <span class="count">x{{ item.count }}</span>
               </div>
             </div>
           </div>
@@ -171,8 +171,8 @@ const getStatusClass = (status: number) => {
 
 // 获取商品总数
 const getTotalCount = (order: any) => {
-  if (!order.orderItems) return 0
-  return order.orderItems.reduce((sum: number, item: any) => sum + item.goodsCount, 0)
+  if (!order.orderCartDTO) return 0
+  return order.orderCartDTO.reduce((sum: number, item: any) => sum + item.count, 0)
 }
 
 // 加载订单列表
@@ -189,12 +189,13 @@ const loadOrderList = async (isRefresh = false) => {
     const res = await orderStore.getOrderPage({
       pageNumber: state.page,
       pageSize: state.pageSize,
-      status: state.status || undefined
-    })
+      orderStatus: state.status ? Number(state.status) : undefined,
+      orderNo: ''
+    } as any)
     
     const records = res.records || []
     state.list = isRefresh ? records : [...state.list, ...records]
-    state.total = res.total || 0
+    state.total = res.totalCount || 0
     state.finished = state.list.length >= state.total
   } catch (error) {
     ElMessage.error('加载订单失败')

@@ -20,7 +20,7 @@
       >
         <div class="item-content">
           <div class="item-header">
-            <span class="name">{{ item.userName }}</span>
+            <span class="name">{{ item.username }}</span>
             <span class="phone">{{ item.userPhone }}</span>
             <el-tag v-if="item.defaultFlag" type="danger" size="small" class="default-tag">默认</el-tag>
           </div>
@@ -86,11 +86,8 @@ const init = async () => {
 // 加载地址列表
 const loadAddressList = async () => {
   try {
-    const res = await addressStore.getAddressPage({
-      pageNumber: 1,
-      pageSize: 100
-    })
-    state.list = res.records || []
+    const res = await addressStore.getAllAddress()
+    state.list = res || []
     
     // 如果有默认地址，选中它
     const defaultAddress = state.list.find((item: any) => item.defaultFlag)
@@ -161,7 +158,7 @@ const handleDelete = async (item: any) => {
       type: 'warning'
     })
     
-    await addressStore.deleteById(item.id)
+    await addressStore.deleteAddress(item.id)
     ElMessage.success('删除成功')
     loadAddressList()
   } catch (error) {

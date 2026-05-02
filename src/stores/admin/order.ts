@@ -1,10 +1,9 @@
 import request  from "@/utils/axios"
-import {ref} from 'vue'
 import {defineStore} from 'pinia'
 import type { PageResult } from "../user/goods"
 import type { OrderDetailVO, OrderPageDTO } from "../user/order"
 
-export const useAdminPageStore=defineStore('adminPage',()=>{
+export const useAdminOrderStore=defineStore('adminOrder',()=>{
     const getPage=async(orderPageDTO:OrderPageDTO):Promise<PageResult>=>{
         const res=await request.get('/admin/order/page',{params:orderPageDTO})
         return res

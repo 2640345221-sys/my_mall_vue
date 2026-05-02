@@ -10,17 +10,7 @@
     </header>
 
     <!-- 商品内容 -->
-    <div class="detail-content" v-if="state.goods.id">
-      <!-- 商品轮播图 -->
-      <div class="goods-swipe">
-        <el-carousel height="300px" v-if="carouselList.length > 0">
-          <el-carousel-item v-for="(item, index) in carouselList" :key="index">
-            <img :src="item" alt="商品图片" />
-          </el-carousel-item>
-        </el-carousel>
-        <img v-else :src="state.goods.coverImg" class="goods-cover" />
-      </div>
-
+    <div class="detail-content" v-if="state.goods.goodsId">
       <!-- 商品信息 -->
       <div class="goods-info">
         <div class="goods-price">
@@ -30,8 +20,8 @@
             ¥{{ state.goods.originalPrice }}
           </span>
         </div>
-        <h1 class="goods-name">{{ state.goods.name }}</h1>
-        <p class="goods-intro">{{ state.goods.intro }}</p>
+        <h1 class="goods-name">{{ state.goods.goodsName }}</h1>
+        <p class="goods-intro">{{ state.goods.goodsIntro }}</p>
         <div class="goods-tags">
           <el-tag v-if="state.goods.tag" type="danger" size="small">{{ state.goods.tag }}</el-tag>
           <el-tag type="info" size="small">免邮费</el-tag>
@@ -45,7 +35,7 @@
           <div class="tab-item active">商品详情</div>
           <div class="tab-item">规格参数</div>
         </div>
-        <div class="detail-html" v-html="state.goods.detailContent"></div>
+        <div class="detail-html" v-html="state.goods.goodsDetailContent"></div>
       </div>
     </div>
 
@@ -53,7 +43,7 @@
     <el-skeleton :rows="10" animated v-else />
 
     <!-- 底部操作栏 -->
-    <div class="action-bar" v-if="state.goods.id">
+    <div class="action-bar" v-if="state.goods.goodsId">
       <div class="action-left">
         <div class="action-item" @click="goToHome">
           <el-icon><HomeFilled /></el-icon>
@@ -62,7 +52,6 @@
         <div class="action-item" @click="goToCart">
           <el-icon><ShoppingCart /></el-icon>
           <span>购物车</span>
-          <el-badge v-if="cartCount > 0" :value="cartCount" class="cart-badge" />
         </div>
       </div>
       <div class="action-right">
@@ -93,17 +82,9 @@ const cartStore = useShoppingCartStore()
 const state = reactive({
   goods: {} as any,
   loading: false,
-  adding: false,
-  cartCount: 0
+  adding: false
 })
 
-// 轮播图列表
-const carouselList = computed(() => {
-  if (state.goods.carousel && state.goods.carousel.length > 0) {
-    return state.goods.carousel
-  }
-  return state.goods.coverImg ? [state.goods.coverImg] : []
-})
 
 // 加载商品详情
 const loadGoodsDetail = async () => {
@@ -142,17 +123,15 @@ const goToCart = () => {
 
 // 加入购物车
 const handleAddCart = async () => {
-  if (!state.goods.id) return
+  if (!state.goods.goodsId) return
 
   state.adding = true
   try {
     await cartStore.addItem({
-      goodsId: state.goods.id,
+      goodsId: state.goods.goodsId,
       goodsCount: 1
     })
     ElMessage.success('加入购物车成功')
-    // 更新购物车数量
-    await loadCartCount()
   } catch (error) {
     ElMessage.error('加入购物车失败')
   } finally {
@@ -162,11 +141,11 @@ const handleAddCart = async () => {
 
 // 立即购买
 const handleBuyNow = async () => {
-  if (!state.goods.id) return
+  if (!state.goods.goodsId) return
 
   try {
     await cartStore.addItem({
-      goodsId: state.goods.id,
+      goodsId: state.goods.goodsId,
       goodsCount: 1
     })
     // 跳转到购物车
@@ -176,15 +155,8 @@ const handleBuyNow = async () => {
   }
 }
 
-// 加载购物车数量
-const loadCartCount = async () => {
-  // 这里可以调用获取购物车数量的接口
-  // state.cartCount = await cartStore.getCartCount()
-}
-
 onMounted(() => {
   loadGoodsDetail()
-  loadCartCount()
 })
 </script>
 

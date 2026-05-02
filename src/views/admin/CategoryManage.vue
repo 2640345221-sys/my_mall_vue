@@ -78,9 +78,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import AdminSidebar from '@/components/admin/Sidebar.vue'
 import AdminHeader from '@/components/admin/Header.vue'
-import axios from '@/utils/axios'
+import { useAdminCategoryStore } from '@/stores/admin/category'
 
 const formRef = ref()
+const adminCategoryStore = useAdminCategoryStore()
 
 const state = reactive({
   categoryList: [] as any[],
@@ -123,15 +124,15 @@ const formRules = {
 const loadCategoryList = async () => {
   state.loading = true
   try {
-    // axios拦截器已经处理了响应，直接返回数据数组
-    const data = await axios.get('/admin/category')
+    // 使用store方法获取分类列表
+    const data = await adminCategoryStore.getAll()
     
     // 详细检查数据结构
-    console.log('axios返回的数据:', data)
+    console.log('store返回的数据:', data)
     console.log('数据类型:', typeof data)
     console.log('是否是数组:', Array.isArray(data))
     
-    // 直接使用axios返回的数据（已经是处理后的数组）
+    // 直接使用store返回的数据（已经是处理后的数组）
     if (Array.isArray(data)) {
       // 使用响应式更新，确保Vue能检测到变化
       state.categoryList = [...data]
@@ -189,11 +190,11 @@ const handleSubmit = async () => {
     // 新增时移除id字段
     if (state.dialogType === 'add') {
       delete params.id
-      await axios.post('/admin/category', params)
+      await adminCategoryStore.insertCategory(params)
       ElMessage.success('新增成功')
     } else {
       // 修改时保留id字段
-      await axios.put('/admin/category', params)
+      await adminCategoryStore.updateCategory(params)
       ElMessage.success('修改成功')
     }
     state.dialogVisible = false
@@ -211,15 +212,8 @@ const handleSubmit = async () => {
 const handleDelete = async (row: any) => {
   try {
     await ElMessageBox.confirm('确定要删除该分类吗？', '提示', { type: 'warning' })
-    // 后端接口要求使用ids参数，格式为List<Long>
-    await axios.delete('/admin/category', { 
-      params: { 
-        ids: [row.id] 
-      },
-      paramsSerializer: {
-        indexes: null // 禁用数组索引格式
-      }
-    })
+    // 使用store方法删除分类
+    await adminCategoryStore.deleteCategory([row.id])
     ElMessage.success('删除成功')
     loadCategoryList()
   } catch (error: any) {

@@ -28,6 +28,10 @@ export interface ShoppingCartItemVO{
     goodsName:string
     sellingPrice?:number
 }
+export interface ShoppingCartDTO{
+    cartItemId:number
+    goodsCount:number
+}
 
 export interface ShoppingCartItemDTO{
     cartItemId:number
@@ -45,7 +49,7 @@ export const useShoppingCartStore=defineStore('shoppingcart',()=>{
         return res
     }
     
-    const updateGoods=async(shoppingCartDTO:CartItemDTO)=>{
+    const updateGoods=async(shoppingCartDTO:ShoppingCartDTO)=>{
         return await request.put('/user/cart',shoppingCartDTO)
     }
     

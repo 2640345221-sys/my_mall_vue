@@ -20,16 +20,6 @@
       </div>
     </header>
 
-    <!-- 轮播图 -->
-    <div class="carousel-section">
-      <el-skeleton :rows="3" animated v-if="state.loading" />
-      <el-carousel height="200px" v-else-if="state.carouselList.length > 0">
-        <el-carousel-item v-for="item in state.carouselList" :key="item.id">
-          <img :src="item.url" @click="goToDetail(item.redirectUrl)" />
-        </el-carousel-item>
-      </el-carousel>
-    </div>
-
     <!-- 分类导航 -->
     <div class="category-section">
       <div
@@ -147,7 +137,6 @@ const categoryStore = useCategoryStore()
 const state = reactive({
   headerScroll: false,
   loading: true,
-  carouselList: [] as Array<any>,
   categoryList: [] as Array<any>,
   newGoodsList: [] as Array<any>,
   popularGoodsList: [] as Array<any>,
@@ -159,15 +148,13 @@ const loadHomeData = async () => {
   state.loading = true
   try {
     // 并行加载所有数据
-    const [carouselRes, categoryRes, newRes, popularRes, recommendRes] = await Promise.all([
-      indexStore.getCarousel(),
+    const [categoryRes, newRes, popularRes, recommendRes] = await Promise.all([
       categoryStore.getCategory(),
       indexStore.getNewGoods(),
       indexStore.getPopularGoods(),
       indexStore.getRecommendGoods()
     ])
 
-    state.carouselList = carouselRes || []
     state.categoryList = categoryRes || []
     state.newGoodsList = newRes || []
     state.popularGoodsList = popularRes || []
@@ -223,7 +210,9 @@ onMounted(() => {
 .home-container {
   min-height: 100vh;
   background: #f5f5f5;
+  padding-top: 60px;
   padding-bottom: 60px;
+  overflow-y: auto;
 }
 
 .home-header {
@@ -346,8 +335,8 @@ onMounted(() => {
 
 .goods-item img {
   width: 100%;
-  height: 150px;
-  object-fit: cover;
+  height: 200px;  /* 增加高度，确保图片完全显示 */
+  object-fit: contain;  /* 保持图片比例，完全显示 */
 }
 
 .goods-info {

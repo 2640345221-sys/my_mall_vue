@@ -1,7 +1,5 @@
 import request  from "@/utils/axios"
-import {ref} from 'vue'
 import {defineStore} from 'pinia'
-import type { PageResult } from "../user/goods"
 import type { GoodSCategory } from "../user/category"
 
 export interface CategoryDTO{
@@ -13,7 +11,7 @@ export interface CategoryDTO{
 }
 
 
-export const userAdminCategory=defineStore('adminCategory',()=>{
+export const useAdminCategoryStore=defineStore('adminCategory',()=>{
     const insertCategory=async(categoryInsertDTO:CategoryDTO)=>{
         await request.post('/admin/category',categoryInsertDTO)
     }
@@ -23,7 +21,7 @@ export const userAdminCategory=defineStore('adminCategory',()=>{
     const updateCategory=async(categoryDTO:CategoryDTO)=>{
         await request.put('/admin/category',categoryDTO)
     }
-    const getCateforyById=async(id:number):Promise<GoodSCategory>=>{
+    const getCategoryById=async(id:number):Promise<GoodSCategory>=>{
         const res=await request.get(`/admin/category/${id}`)
         return res
     }
@@ -35,7 +33,7 @@ export const userAdminCategory=defineStore('adminCategory',()=>{
         insertCategory,
         deleteCategory,
         updateCategory,
-        getCateforyById,
+        getCategoryById,
         getAll,
 
     }

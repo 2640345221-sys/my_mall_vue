@@ -4,9 +4,7 @@
     <header class="user-header">
       <div class="header-left"></div>
       <div class="header-title">我的</div>
-      <div class="header-right" @click="goToSetting">
-        <el-icon><Setting /></el-icon>
-      </div>
+      <div class="header-right"></div>
     </header>
 
     <!-- 用户信息卡片 -->
@@ -113,7 +111,6 @@ import { reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Setting,
   ArrowRight,
   Wallet,
   Box,
@@ -142,18 +139,13 @@ const state = reactive({
 const loadUserInfo = async () => {
   state.loading = true
   try {
-    const res = await userStore.getUserInfo()
-    state.user = res || {}
+    const user = await userStore.getInfo()
+    state.user = user
   } catch (error) {
     console.error('加载用户信息失败', error)
   } finally {
     state.loading = false
   }
-}
-
-// 跳转到设置
-const goToSetting = () => {
-  router.push('/user/setting')
 }
 
 // 跳转到订单列表

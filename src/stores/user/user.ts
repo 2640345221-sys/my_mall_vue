@@ -33,6 +33,7 @@ export const useUserStore=defineStore('user',()=>{
         token.value=userToken
         userInfo.value=res
         localStorage.setItem('token',userToken)
+        localStorage.setItem('userPassword',loginDTO.password)
         return res
     }
 
@@ -40,7 +41,8 @@ export const useUserStore=defineStore('user',()=>{
         await request.post('/user/logout')       
         token.value = ''
         userInfo.value = null
-        localStorage.removeItem('token') 
+        localStorage.removeItem('token')
+        localStorage.removeItem('userPassword')
     }
 
     const register=async(loginDTO:LoginParams)=>{
