@@ -55,7 +55,11 @@
         <!-- 数据表格 -->
         <el-table :data="state.orderList" v-loading="state.loading"  style="margin-top: 16px">
           <el-table-column prop="orderNo" label="订单号" min-width="180" />
-          <el-table-column prop="userName" label="用户" min-width="120" />
+          <el-table-column prop="userId" label="用户ID" min-width="100">
+            <template #default="scope">
+              {{ scope.row.userId || '未知' }}
+            </template>
+          </el-table-column>
           <el-table-column prop="totalPrice" label="订单金额" min-width="100">
             <template #default="scope">
               ¥{{ (scope.row.totalPrice / 100).toFixed(2) }}
@@ -68,8 +72,8 @@
           </el-table-column>
           <el-table-column prop="status" label="订单状态" min-width="100">
             <template #default="scope">
-              <el-tag :type="getStatusType(scope.row.status)">
-                {{ getStatusText(scope.row.status) }}
+              <el-tag :type="getStatusType(getOrderStatus(scope.row))">
+                {{ getStatusText(getOrderStatus(scope.row)) }}
               </el-tag>
             </template>
           </el-table-column>
@@ -80,7 +84,7 @@
                 详情
               </el-button>
               <el-button
-                v-if="scope.row.status === 1"
+                v-if="getOrderStatus(scope.row) === 1"
                 type="success"
                 link
                 @click="handleShip(scope.row)"
@@ -88,15 +92,7 @@
                 发货
               </el-button>
               <el-button
-                v-if="scope.row.status === 2"
-                type="warning"
-                link
-                @click="handleConfirmReceive(scope.row)"
-              >
-                确认收货
-              </el-button>
-              <el-button
-                v-if="scope.row.status === 0 || scope.row.status === 1"
+                v-if="getOrderStatus(scope.row) === 0 || getOrderStatus(scope.row) === 1"
                 type="danger"
                 link
                 @click="handleCancel(scope.row)"
@@ -139,8 +135,8 @@
       <div v-if="state.currentOrder" class="order-detail">
         <!-- 订单状态 -->
         <div class="detail-section status-section">
-          <el-tag :type="getStatusType(state.currentOrder.status)" size="large">
-            {{ getStatusText(state.currentOrder.status) }}
+          <el-tag :type="getStatusType(getOrderStatus(state.currentOrder))" size="large">
+            {{ getStatusText(getOrderStatus(state.currentOrder)) }}
           </el-tag>
         </div>
 
@@ -162,41 +158,58 @@
           <div class="detail-row">
             <span class="label">订单状态：</span>
             <span class="value">
-              <el-tag :type="getStatusType(state.currentOrder.status)">
-                {{ getStatusText(state.currentOrder.status) }}
+              <el-tag :type="getStatusType(getOrderStatus(state.currentOrder))">
+                {{ getStatusText(getOrderStatus(state.currentOrder)) }}
               </el-tag>
             </span>
           </div>
         </div>
 
         <!-- 收货信息 -->
-        <div class="detail-section">
+        <div class="detail-section" v-if="state.currentOrder.orderAddress">
           <h4>收货信息</h4>
           <div class="detail-row">
             <span class="label">收货人：</span>
-            <span class="value">{{ state.currentOrder.userName }}</span>
+            <span class="value">{{ state.currentOrder.orderAddress.username || '未知' }}</span>
           </div>
           <div class="detail-row">
             <span class="label">手机号：</span>
-            <span class="value">{{ state.currentOrder.userPhone }}</span>
+            <span class="value">{{ state.currentOrder.orderAddress.userPhone || '未知' }}</span>
           </div>
           <div class="detail-row">
             <span class="label">收货地址：</span>
-            <span class="value">{{ state.currentOrder.address }}</span>
+            <span class="value">
+              <span v-if="state.currentOrder.orderAddress.province && state.currentOrder.orderAddress.city && state.currentOrder.orderAddress.region && state.currentOrder.orderAddress.detailAddress">
+                {{ state.currentOrder.orderAddress.province }}{{ state.currentOrder.orderAddress.city }}{{ state.currentOrder.orderAddress.region }}{{ state.currentOrder.orderAddress.detailAddress }}
+              </span>
+              <span v-else-if="state.currentOrder.orderAddress.detailAddress">
+                {{ state.currentOrder.orderAddress.detailAddress }}
+              </span>
+              <span v-else>
+                未知
+              </span>
+            </span>
+          </div>
+        </div>
+        <div class="detail-section" v-else>
+          <h4>收货信息</h4>
+          <div class="detail-row">
+            <span class="label">收货信息：</span>
+            <span class="value">暂无收货信息</span>
           </div>
         </div>
 
         <!-- 商品信息 -->
         <div class="detail-section">
           <h4>商品信息</h4>
-          <el-table :data="state.currentOrder.items" border size="small">
-            <el-table-column prop="name" label="商品名称" />
+          <el-table :data="state.currentOrder.orderCartDTO || state.currentOrder.items || []" border size="small">
+            <el-table-column prop="goodsName" label="商品名称" />
             <el-table-column prop="price" label="单价" width="100">
-              <template #default="scope">¥{{ (scope.row.price / 100).toFixed(2) }}</template>
+              <template #default="scope">¥{{ scope.row.price }}</template>
             </el-table-column>
             <el-table-column prop="count" label="数量" width="80" />
             <el-table-column label="小计" width="100">
-              <template #default="scope">¥{{ ((scope.row.price * scope.row.count) / 100).toFixed(2) }}</template>
+              <template #default="scope">¥{{ (scope.row.price * scope.row.count) }}</template>
             </el-table-column>
           </el-table>
         </div>
@@ -205,7 +218,7 @@
         <div class="detail-section total">
           <div class="detail-row">
             <span class="label">商品总额：</span>
-            <span class="value">¥{{ (state.currentOrder.totalPrice / 100).toFixed(2) }}</span>
+            <span class="value">¥{{ state.currentOrder.totalPrice }}</span>
           </div>
           <div class="detail-row">
             <span class="label">运费：</span>
@@ -213,7 +226,7 @@
           </div>
           <div class="detail-row final-total">
             <span class="label">实付金额：</span>
-            <span class="value">¥{{ (state.currentOrder.totalPrice / 100).toFixed(2) }}</span>
+            <span class="value">¥{{ state.currentOrder.totalPrice }}</span>
           </div>
         </div>
 
@@ -293,36 +306,58 @@ const state = reactive({
     company: '',
     trackingNo: ''
   },
+  cancelStatusFilter: false, // 是否筛选取消状态
   statusStats: [
     { label: '全部', status: null },
-    { label: '待付款', status: 0 },
-    { label: '待发货', status: 1 },
-    { label: '待收货', status: 2 },
-    { label: '已完成', status: 3 },
-    { label: '已取消', status: 4 }
+    { label: '待支付', status: 0 },
+    { label: '已支付', status: 1 },
+    { label: '出库成功', status: 3 },
+    { label: '交易成功', status: 4 },
+    { label: '已取消', status: -1 }
   ]
 })
 
+// 获取订单状态值（兼容不同字段名）
+const getOrderStatus = (order: any): number => {
+  // 优先使用 orderStatus 字段，如果不存在则使用 status 字段
+  const status = order.orderStatus !== undefined ? order.orderStatus : order.status
+  
+  // 确保状态值是有效的数字
+  const statusValue = Number(status)
+  
+  // 如果转换后是 NaN，返回默认值
+  if (isNaN(statusValue)) {
+    console.warn('订单状态值无效:', status, '订单:', order)
+    return -1 // 返回无效状态标识
+  }
+  
+  return statusValue
+}
+
 const getStatusType = (status: number) => {
   const typeMap: Record<number, string> = {
-    0: 'warning',
-    1: 'primary',
-    2: 'success',
-    3: 'info',
-    4: 'danger'
+    [-3]: 'danger',    // 取消订单关闭 - 红色
+    [-2]: 'danger',    // 超时关闭 - 红色
+    [-1]: 'danger',    // 确认订单关闭 - 红色
+    0: 'warning',      // 待支付 - 黄色
+    1: 'primary',      // 已支付 - 蓝色
+    3: 'info',         // 出库成功 - 灰色
+    4: 'success'       // 交易成功 - 绿色
   }
   return typeMap[status] || 'info'
 }
 
 const getStatusText = (status: number) => {
   const textMap: Record<number, string> = {
-    0: '待付款',
-    1: '待发货',
-    2: '待收货',
-    3: '已完成',
-    4: '已取消'
+    [-3]: '取消订单关闭',
+    [-2]: '超时关闭',
+    [-1]: '确认订单关闭',
+    0: '待支付',
+    1: '已支付',
+    3: '出库成功',
+    4: '交易成功'
   }
-  return textMap[status] || '未知'
+  return textMap[status] || `未知(${status})`
 }
 
 const getPayTypeText = (type: number) => {
@@ -344,9 +379,20 @@ const loadOrderList = async () => {
       startTime: state.dateRange && state.dateRange.length === 2 ? state.dateRange[0] : undefined,
       endTime: state.dateRange && state.dateRange.length === 2 ? state.dateRange[1] : undefined
     }
+    
     const res = await adminOrderStore.getPage(params)
-    state.orderList = res.records || []
-    state.total = res.total || 0
+    
+    // 如果选择了已取消分类，需要在前端过滤出所有取消状态的订单
+    if (state.cancelStatusFilter) {
+      state.orderList = (res.records || []).filter((order: any) => {
+        const status = getOrderStatus(order)
+        return status === -1 || status === -2 || status === -3
+      })
+      state.total = state.orderList.length
+    } else {
+      state.orderList = res.records || []
+      state.total = res.total || 0
+    }
   } catch (error) {
     ElMessage.error('加载订单列表失败')
   } finally {
@@ -370,7 +416,14 @@ const handleReset = () => {
 }
 
 const handleStatusFilter = (status: number | null) => {
-  state.searchStatus = status
+  // 如果选择的是已取消(-1)，需要特殊处理，查询所有取消状态
+  if (status === -1) {
+    state.searchStatus = -1 // 保持状态为-1，确保高亮正确
+    state.cancelStatusFilter = true // 标记为取消状态筛选
+  } else {
+    state.searchStatus = status
+    state.cancelStatusFilter = false
+  }
   state.page = 1
   loadOrderList()
 }
@@ -388,19 +441,15 @@ const handleDetail = async (row: any) => {
 const handleShip = (row: any) => {
   state.shipForm.orderNo = row.orderNo
   state.shipForm.orderId = row.id
-  state.shipForm.company = ''
-  state.shipForm.trackingNo = ''
+  state.shipForm.company = '顺丰速运' // 默认快递公司
+  state.shipForm.trackingNo = row.orderNo // 快递单号默认为订单号
   state.shipVisible = true
 }
 
 const handleShipSubmit = async () => {
-  if (!state.shipForm.company || !state.shipForm.trackingNo) {
-    ElMessage.warning('请填写完整的物流信息')
-    return
-  }
   state.shipLoading = true
   try {
-    await adminOrderStore.checkOut([state.shipForm.orderId!])
+    await adminOrderStore.checkOut([state.shipForm.orderId])
     ElMessage.success('发货成功')
     state.shipVisible = false
     loadOrderList()
@@ -413,8 +462,9 @@ const handleShipSubmit = async () => {
 
 const handleConfirmReceive = async (row: any) => {
   try {
+
     await ElMessageBox.confirm('确认该订单已收货？', '提示', { type: 'warning' })
-    await adminOrderStore.checkDone([row.orderNo])
+    await adminOrderStore.checkDone([row.id])
     ElMessage.success('确认收货成功')
     loadOrderList()
   } catch (error) {
@@ -427,7 +477,7 @@ const handleConfirmReceive = async (row: any) => {
 const handleCancel = async (row: any) => {
   try {
     await ElMessageBox.confirm('确定要取消该订单吗？', '提示', { type: 'warning' })
-    await adminOrderStore.close([row.orderNo])
+    await adminOrderStore.close([row.id])
     ElMessage.success('取消成功')
     loadOrderList()
   } catch (error) {

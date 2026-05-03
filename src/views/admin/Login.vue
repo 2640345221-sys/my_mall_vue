@@ -2,9 +2,7 @@
   <div class="admin-login">
     <div class="login-box">
       <div class="login-header">
-        <el-icon :size="40" color="#409EFF"><Shop /></el-icon>
-        <h1>My Mall 管理后台</h1>
-        <p>Admin Management System</p>
+        <p style="color: #409EFF; font-size: 18px; font-weight: bold;">管理员登录</p>
       </div>
 
       <el-form
@@ -48,11 +46,7 @@
       </el-form>
 
       <div class="login-links">
-        <el-link type="info" @click="goToUserLogin">返回用户登录</el-link>
-      </div>
-      
-      <div class="login-footer">
-        <p>© 2024 My Mall. All rights reserved.</p>
+        <el-link type="primary" @click="goToUserLogin">返回用户登录</el-link>
       </div>
     </div>
   </div>

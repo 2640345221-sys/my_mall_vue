@@ -3,6 +3,11 @@ import {defineStore} from 'pinia'
 import type { PageResult } from "../user/goods"
 import type { OrderDetailVO, OrderPageDTO } from "../user/order"
 
+export interface OrderPayDTO{
+    orderNo:string
+    payType:number
+}
+
 export const useAdminOrderStore=defineStore('adminOrder',()=>{
     const getPage=async(orderPageDTO:OrderPageDTO):Promise<PageResult>=>{
         const res=await request.get('/admin/order/page',{params:orderPageDTO})
@@ -21,6 +26,9 @@ export const useAdminOrderStore=defineStore('adminOrder',()=>{
     const close=async(ids:Array<number>)=>{
         await request.put('/admin/order/close',ids)
     }
+    const paySuccess=async(orderPayDTO:OrderPayDTO)=>{
+        await request.post('/admin/order/paySuccess',orderPayDTO)
+    }
 
     return{
         getPage,
@@ -28,5 +36,6 @@ export const useAdminOrderStore=defineStore('adminOrder',()=>{
         checkDone,
         checkOut,
         close,
+        paySuccess,
     }
 })

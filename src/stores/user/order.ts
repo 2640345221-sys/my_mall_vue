@@ -41,6 +41,7 @@ export interface OrderAddress{
     orderId:number
 }
 export interface OrderDetailVO{
+    id:number
     orderNo:string
     userId:number
     totalPrice?:number
@@ -48,7 +49,7 @@ export interface OrderDetailVO{
     payType?:number
     orderStatus?:number
     orderCartDTO?:Array<OrderCartDTO>
-
+    orderAddress?:OrderAddress
 }
 export interface OrderPageDTO{
     pageNumber:number

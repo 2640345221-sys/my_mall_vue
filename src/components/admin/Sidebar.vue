@@ -2,7 +2,7 @@
   <aside class="admin-sidebar">
     <div class="logo">
       <el-icon :size="30"><Shop /></el-icon>
-      <span>My Mall Admin</span>
+      <span>管理端</span>
     </div>
     <el-menu
       :default-active="activeMenu"

@@ -67,7 +67,7 @@
         <!-- 订单操作 -->
         <div class="order-actions">
           <el-button
-            v-if="order.status === 0"
+            v-if="order.orderStatus === 0"
             type="primary"
             size="small"
             @click.stop="handlePay(order)"
@@ -75,7 +75,7 @@
             立即支付
           </el-button>
           <el-button
-            v-if="order.status === 3"
+            v-if="order.orderStatus === 3"
             type="success"
             size="small"
             @click.stop="handleConfirm(order)"
@@ -83,7 +83,7 @@
             确认收货
           </el-button>
           <el-button
-            v-if="order.status === 0"
+            v-if="order.orderStatus === 0"
             size="small"
             @click.stop="handleCancel(order)"
           >
@@ -128,11 +128,11 @@ const orderStore = useOrderStore()
 // 订单状态标签
 const tabs = [
   { label: '全部', value: '' },
-  { label: '待付款', value: '0' },
-  { label: '待发货', value: '1' },
-  { label: '待收货', value: '2' },
-  { label: '已完成', value: '3' },
-  { label: '已取消', value: '4' }
+  { label: '待支付', value: '0' },
+  { label: '已支付', value: '1' },
+  { label: '出库成功', value: '3' },
+  { label: '交易成功', value: '4' },
+  { label: '已取消', value: '-1' }
 ]
 
 const state = reactive({
@@ -142,17 +142,20 @@ const state = reactive({
   finished: false,
   page: 1,
   pageSize: 10,
-  total: 0
+  total: 0,
+  cancelStatusFilter: false // 是否筛选取消状态
 })
 
 // 获取状态文本
 const getStatusText = (status: number) => {
   const statusMap: Record<number, string> = {
-    0: '待付款',
-    1: '待发货',
-    2: '待收货',
-    3: '已完成',
-    4: '已取消'
+    [-3]: '取消订单关闭',
+    [-2]: '超时关闭',
+    [-1]: '确认订单关闭',
+    0: '待支付',
+    1: '已支付',
+    3: '出库成功',
+    4: '交易成功'
   }
   return statusMap[status] || '未知状态'
 }
@@ -160,11 +163,13 @@ const getStatusText = (status: number) => {
 // 获取状态样式类
 const getStatusClass = (status: number) => {
   const classMap: Record<number, string> = {
+    [-3]: 'status-cancelled',
+    [-2]: 'status-cancelled',
+    [-1]: 'status-cancelled',
     0: 'status-unpaid',
-    1: 'status-pending',
-    2: 'status-shipped',
-    3: 'status-completed',
-    4: 'status-cancelled'
+    1: 'status-paid',
+    3: 'status-express',
+    4: 'status-success'
   }
   return classMap[status] || ''
 }
@@ -193,9 +198,20 @@ const loadOrderList = async (isRefresh = false) => {
       orderNo: ''
     } as any)
     
-    const records = res.records || []
+    let records = res.records || []
+    
+    // 如果选择了已取消分类，需要在前端过滤出所有取消状态的订单
+    if (state.cancelStatusFilter) {
+      records = records.filter((order: any) => {
+        const status = order.status || order.orderStatus
+        return status === -1 || status === -2 || status === -3
+      })
+      state.total = records.length
+    } else {
+      state.total = res.total || 0
+    }
+    
     state.list = isRefresh ? records : [...state.list, ...records]
-    state.total = res.total || 0
     state.finished = state.list.length >= state.total
   } catch (error) {
     ElMessage.error('加载订单失败')
@@ -207,7 +223,14 @@ const loadOrderList = async (isRefresh = false) => {
 
 // 切换标签
 const handleTabChange = (status: string) => {
-  state.status = status
+  // 如果选择的是已取消(-1)，需要特殊处理，查询所有取消状态的订单
+  if (status === '-1') {
+    state.status = '' // 清空状态筛选
+    state.cancelStatusFilter = true // 标记为取消状态筛选
+  } else {
+    state.status = status
+    state.cancelStatusFilter = false
+  }
   loadOrderList(true)
 }
 

@@ -6,7 +6,7 @@ const router =createRouter({
         // 用户端路由
         {
             path:'/',
-            redirect:'/home'
+            redirect:'/login'
         },
         {
             path:'/home',
@@ -21,7 +21,7 @@ const router =createRouter({
         {
             path:'/register',
             name:'Register',
-            component:()=>import('@/views/user/Login.vue')
+            component:()=>import('@/views/user/Register.vue')
         },
         {
             path:'/category',

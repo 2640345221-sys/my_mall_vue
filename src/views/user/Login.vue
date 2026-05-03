@@ -1,7 +1,7 @@
 <template>
 <div class="login-container">
     <div class="login-box">
-      <h2 class="title">用户登录</h2>
+      <h2 class="title" style="color: #409EFF;">用户登录</h2>
       
       <el-form 
         :model="form" 
@@ -43,7 +43,7 @@
       
       <div class="login-links">
         <el-link type="primary" @click="getRegister">还没有账号？去注册</el-link>
-        <el-link type="info" @click="goToAdminLogin">管理员登录</el-link>
+        <el-link type="primary" @click="goToAdminLogin">管理员登录</el-link>
       </div>
     </div>
   </div>
@@ -85,7 +85,7 @@ const handleLogin =async()=>{
     }
 }
 const getRegister=()=>{
-    ElMessage.info('注册功能稍后实现')
+    router.push('/register')
 }
 
 const goToAdminLogin=()=>{
