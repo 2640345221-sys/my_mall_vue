@@ -1,15 +1,8 @@
 <template>
   <div class="create-order">
-    <!-- 顶部导航 -->
-    <header class="order-header">
-      <div class="header-left" @click="goBack">
-        <el-icon><ArrowLeft /></el-icon>
-      </div>
-      <div class="header-title">确认订单</div>
-      <div class="header-right"></div>
-    </header>
+    <PageHeader title="确认订单" @back="goBack" />
 
-    <!-- 地址信息 -->
+    
     <div class="address-section" @click="goToAddress">
       <div v-if="state.address.id" class="address-info">
         <div class="address-header">
@@ -17,7 +10,7 @@
           <span class="phone">{{ state.address.userPhone }}</span>
         </div>
         <div class="address-detail">
-          {{ state.address.provinceName }} {{ state.address.cityName }} {{ state.address.regionName }} {{ state.address.detailAddress }}
+          {{ state.address.province }} {{ state.address.city }} {{ state.address.region }} {{ state.address.detailAddress }}
         </div>
       </div>
       <div v-else class="no-address">
@@ -27,7 +20,7 @@
       <el-icon class="arrow"><ArrowRight /></el-icon>
     </div>
 
-    <!-- 商品列表 -->
+    
     <div class="goods-section">
       <h3 class="section-title">商品信息</h3>
       <div class="goods-list">
@@ -36,17 +29,17 @@
           <div class="goods-info">
             <div class="goods-name">{{ item.goodsName }}</div>
             <div class="goods-count">x{{ item.goodsCount }}</div>
-            <div class="goods-price">¥{{ item.sellingPrice }}</div>
+            <div class="goods-price">¥{{ formatPrice(item.sellingPrice) }}</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 订单金额 -->
+    
     <div class="amount-section">
       <div class="amount-item">
         <span>商品金额</span>
-        <span class="price">¥{{ totalAmount }}</span>
+        <span class="price">¥{{ formatPrice(totalAmount) }}</span>
       </div>
       <div class="amount-item">
         <span>运费</span>
@@ -54,11 +47,11 @@
       </div>
       <div class="amount-item total">
         <span>实付金额</span>
-        <span class="price total-price">¥{{ totalAmount }}</span>
+        <span class="price total-price">¥{{ formatPrice(totalAmount) }}</span>
       </div>
     </div>
 
-    <!-- 支付方式 -->
+    
     <div class="pay-section">
       <h3 class="section-title">支付方式</h3>
       <el-radio-group v-model="state.payType">
@@ -73,11 +66,11 @@
       </el-radio-group>
     </div>
 
-    <!-- 底部提交栏 -->
+    
     <div class="submit-bar">
       <div class="total-info">
         <span class="total-label">合计:</span>
-        <span class="total-amount">¥{{ totalAmount }}</span>
+        <span class="total-amount">¥{{ formatPrice(totalAmount) }}</span>
       </div>
       <el-button type="danger" size="large" @click="handleSubmit" :loading="state.submitting">
         提交订单
@@ -90,16 +83,15 @@
 import { reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, ArrowRight, Location, Money, Wallet } from '@element-plus/icons-vue'
-import { useAddressStore } from '@/stores/user/address'
-import { useOrderStore } from '@/stores/user/order'
-import { useShoppingCartStore } from '@/stores/user/shoppingcart'
+import { ArrowRight, Location, Money, Wallet } from '@element-plus/icons-vue'
+import PageHeader from '@/components/PageHeader.vue'
+import { getById as getAddressById, getDefault as getDefaultAddress } from '@/api/user/address'
+import { createOrder, payOrder } from '@/api/user/order'
+import { getCartPage } from '@/api/user/cart'
+import { formatPrice } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
-const addressStore = useAddressStore()
-const orderStore = useOrderStore()
-const cartStore = useShoppingCartStore()
 
 const state = reactive({
   goodsList: [] as Array<any>,
@@ -109,18 +101,14 @@ const state = reactive({
   cartItemIds: [] as number[]
 })
 
-// 计算总金额
 const totalAmount = computed(() => {
   return state.goodsList
     .reduce((sum, item) => sum + item.sellingPrice * item.goodsCount, 0)
-    .toFixed(2)
 })
 
-// 初始化数据
 const init = async () => {
   const { cartItemIds, addressId } = route.query
   
-  // 解析购物车项ID
   if (cartItemIds) {
     try {
       state.cartItemIds = JSON.parse(cartItemIds as string)
@@ -130,12 +118,11 @@ const init = async () => {
     }
   }
   
-  // 获取购物车商品详情
   if (state.cartItemIds.length > 0) {
     try {
-      const res = await cartStore.pageResult({ pageNumber: 1, pageSize: 100 })
+      const res = await getCartPage({ pageNumber: 1, pageSize: 100 })
       const allItems = res.records || []
-      state.goodsList = allItems.filter((item: any) => 
+      state.goodsList = allItems.filter((item: any) =>
         state.cartItemIds.includes(item.cartItemId)
       )
     } catch (error) {
@@ -143,24 +130,19 @@ const init = async () => {
     }
   }
   
-  // 获取地址
   await loadAddress(addressId as string)
 }
 
-// 加载地址
 const loadAddress = async (addressId?: string) => {
   try {
     if (addressId) {
-      // 获取指定地址
-      const res = await addressStore.getById(Number(addressId))
+      const res = await getAddressById(Number(addressId))
       state.address = res || {}
     } else {
-      // 获取默认地址
-      const res = await addressStore.getDefaultAddresss()
+      const res = await getDefaultAddress()
       state.address = res || {}
     }
     
-    // 如果没有地址，提示用户添加
     if (!state.address.id) {
       ElMessage.warning('请先添加收货地址')
     }
@@ -169,12 +151,10 @@ const loadAddress = async (addressId?: string) => {
   }
 }
 
-// 返回上一页
 const goBack = () => {
   router.back()
 }
 
-// 跳转到地址选择
 const goToAddress = () => {
   router.push({
     path: '/address',
@@ -185,7 +165,6 @@ const goToAddress = () => {
   })
 }
 
-// 提交订单
 const handleSubmit = async () => {
   if (!state.address.id) {
     ElMessage.warning('请选择收货地址')
@@ -199,24 +178,15 @@ const handleSubmit = async () => {
   
   state.submitting = true
   try {
-    // 构建订单参数
     const params = {
       addressId: state.address.id,
       cartItemIds: state.cartItemIds
     }
     
-    // 创建订单
-    const result = await orderStore.saveOrder(params)
+    const orderNo = await createOrder(params)
     ElMessage.success('订单创建成功')
     
-    // 获取订单号并跳转支付
-    const orderNo = result?.orderNo || result?.data?.orderNo
-    if (orderNo) {
-      await handlePay(orderNo)
-    } else {
-      // 如果没有返回订单号，跳转到订单列表
-      router.push('/order')
-    }
+    await handlePay(orderNo)
   } catch (error) {
     ElMessage.error('创建订单失败')
   } finally {
@@ -224,22 +194,19 @@ const handleSubmit = async () => {
   }
 }
 
-// 支付订单
 const handlePay = async (orderNo: string) => {
   try {
-    await orderStore.payOrder({
+    await payOrder({
       orderNo,
       payType: state.payType
     })
     ElMessage.success('支付成功')
     
-    // 跳转到订单详情
     setTimeout(() => {
       router.push(`/order/${orderNo}`)
     }, 1500)
   } catch (error) {
     ElMessage.error('支付失败')
-    // 跳转到订单列表
     router.push('/order')
   }
 }
@@ -253,7 +220,7 @@ onMounted(() => {
 .create-order {
   min-height: 100vh;
   background: #f5f5f5;
-  padding-bottom: 80px;
+  padding-bottom: 100px;
 }
 
 .order-header {

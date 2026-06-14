@@ -1,19 +1,14 @@
 <template>
   <div class="category-container">
-    <!-- 顶部导航栏 -->
-    <header class="category-header">
-      <div class="header-left" @click="goHome">
-        <el-icon><ArrowLeft /></el-icon>
-      </div>
-      <div class="header-title">商品分类</div>
-      <div class="header-right">
+    <PageHeader title="商品分类" @back="goHome">
+      <template #right>
         <el-icon><MoreFilled /></el-icon>
-      </div>
-    </header>
+      </template>
+    </PageHeader>
 
-    <!-- 分类内容 -->
+    
     <div class="category-content" ref="categoryContentRef">
-      <!-- 左侧分类导航 -->
+      
       <div class="category-nav">
         <div
           class="nav-item"
@@ -26,9 +21,9 @@
         </div>
       </div>
 
-      <!-- 右侧分类详情 -->
+      
       <div class="category-detail" v-if="currentCategory">
-        <!-- 二级分类 -->
+        
         <div
           class="sub-category"
           v-for="subItem in currentCategory.children"
@@ -36,7 +31,7 @@
         >
           <h3 class="sub-title">{{ subItem.name }}</h3>
           
-          <!-- 三级分类 -->
+          
           <div class="third-category-list" v-if="subItem.children && subItem.children.length > 0">
             <div
               class="third-item"
@@ -51,7 +46,7 @@
             </div>
           </div>
           
-          <!-- 没有三级分类时，点击二级分类 -->
+          
           <div class="third-category-list" v-else>
             <div
               class="third-item"
@@ -65,7 +60,7 @@
           </div>
         </div>
 
-        <!-- 没有子分类时显示空状态 -->
+        
         <el-empty
           v-if="!currentCategory.children || currentCategory.children.length === 0"
           description="暂无分类"
@@ -73,25 +68,7 @@
       </div>
     </div>
 
-    <!-- 底部导航 -->
-    <nav class="bottom-nav">
-      <router-link to="/home" class="nav-item">
-        <el-icon><HomeFilled /></el-icon>
-        <span>首页</span>
-      </router-link>
-      <router-link to="/category" class="nav-item active">
-        <el-icon><Grid /></el-icon>
-        <span>分类</span>
-      </router-link>
-      <router-link to="/cart" class="nav-item">
-        <el-icon><ShoppingCart /></el-icon>
-        <span>购物车</span>
-      </router-link>
-      <router-link to="/user" class="nav-item">
-        <el-icon><User /></el-icon>
-        <span>我的</span>
-      </router-link>
-    </nav>
+    <BottomNav />
   </div>
 </template>
 
@@ -99,11 +76,12 @@
 import { reactive, onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Search, MoreFilled, Goods, HomeFilled, Grid, ShoppingCart, User } from '@element-plus/icons-vue'
-import { useCategoryStore } from '@/stores/user/category'
+import { MoreFilled, Goods } from '@element-plus/icons-vue'
+import { getCategory } from '@/api/user/category'
+import PageHeader from '@/components/PageHeader.vue'
+import BottomNav from '@/components/BottomNav.vue'
 
 const router = useRouter()
-const categoryStore = useCategoryStore()
 const categoryContentRef = ref<HTMLElement | null>(null)
 
 const state = reactive({
@@ -112,19 +90,16 @@ const state = reactive({
   loading: false
 })
 
-// 当前选中的分类
 const currentCategory = computed(() => {
   return state.categoryList.find(item => item.id === state.currentId)
 })
 
-// 加载分类数据
 const loadCategoryData = async () => {
   state.loading = true
   try {
-    const res = await categoryStore.getCategory()
+    const res = await getCategory()
     console.log(res)
     state.categoryList = res || []
-    // 默认选中第一个分类
     if (state.categoryList.length > 0) {
       state.currentId = state.categoryList[0].id
     }
@@ -136,22 +111,15 @@ const loadCategoryData = async () => {
   }
 }
 
-// 选择分类
 const selectCategory = (id: number) => {
   state.currentId = id
 }
 
-// 跳转到首页
 const goHome = () => {
   router.push('/home')
 }
 
-// 跳转到搜索
-const goToSearch = () => {
-  router.push('/goods-search')
-}
 
-// 跳转到商品列表
 const goToGoodsList = (categoryId?: number) => {
   if (categoryId) {
     router.push(`/goods-search?categoryId=${categoryId}`)
@@ -160,7 +128,6 @@ const goToGoodsList = (categoryId?: number) => {
 
 onMounted(() => {
   loadCategoryData()
-  // 设置内容区域高度
   if (categoryContentRef.value) {
     const screenHeight = document.documentElement.clientHeight
     categoryContentRef.value.style.height = screenHeight - 100 + 'px'

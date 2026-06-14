@@ -1,17 +1,10 @@
 <template>
   <div class="about-container">
-    <!-- 顶部导航 -->
-    <header class="about-header">
-      <div class="header-left" @click="goBack">
-        <el-icon><ArrowLeft /></el-icon>
-      </div>
-      <div class="header-title">关于我们</div>
-      <div class="header-right"></div>
-    </header>
+    <PageHeader title="关于我们" @back="goBack" />
 
-    <!-- 内容区域 -->
+    
     <div class="about-content">
-      <!-- Logo 区域 -->
+      
       <div class="logo-section">
         <div class="logo">
           <el-icon :size="60" color="#1baeae"><Shop /></el-icon>
@@ -20,7 +13,7 @@
         <p class="app-version">版本 1.0.0</p>
       </div>
 
-      <!-- 简介 -->
+      
       <div class="section">
         <h2 class="section-title">
           <el-icon><InfoFilled /></el-icon>
@@ -34,7 +27,7 @@
         </p>
       </div>
 
-      <!-- 技术栈 -->
+      
       <div class="section">
         <h2 class="section-title">
           <el-icon><Cpu /></el-icon>
@@ -51,9 +44,31 @@
         </div>
       </div>
 
-      <!-- 版权信息 -->
+      
+      <div class="section">
+        <h2 class="section-title">
+          <el-icon><Message /></el-icon>
+          联系我们
+        </h2>
+        <div class="contact-list">
+          <div class="contact-item">
+            <span class="label">客服电话</span>
+            <span class="value">400-123-4567</span>
+          </div>
+          <div class="contact-item">
+            <span class="label">客服邮箱</span>
+            <span class="value">service@mymall.com</span>
+          </div>
+          <div class="contact-item">
+            <span class="label">工作时间</span>
+            <span class="value">周一至周日 9:00-21:00</span>
+          </div>
+        </div>
+      </div>
+
+      
       <div class="footer">
-        <p>© 2026 My Mall. All rights reserved.</p>
+        <p>© 2024 My Mall. All rights reserved.</p>
         <p>本系统仅供学习交流使用</p>
       </div>
     </div>
@@ -62,7 +77,8 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Shop, InfoFilled, Cpu, Message } from '@element-plus/icons-vue'
+import { Shop, InfoFilled, Cpu, Message } from '@element-plus/icons-vue'
+import PageHeader from '@/components/PageHeader.vue'
 
 const router = useRouter()
 

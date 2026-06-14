@@ -1,15 +1,8 @@
 <template>
   <div class="order-container">
-    <!-- 顶部导航 -->
-    <header class="order-header">
-      <div class="header-left" @click="goBack">
-        <el-icon><ArrowLeft /></el-icon>
-      </div>
-      <div class="header-title">我的订单</div>
-      <div class="header-right"></div>
-    </header>
+    <PageHeader title="我的订单" @back="goBack" />
 
-    <!-- 订单状态标签 -->
+    
     <div class="order-tabs">
       <div
         class="tab-item"
@@ -22,7 +15,7 @@
       </div>
     </div>
 
-    <!-- 订单列表 -->
+    
     <div class="order-list" v-loading="state.loading">
       <div
         class="order-item"
@@ -30,7 +23,7 @@
         :key="order.orderNo"
         @click="goToDetail(order.orderNo)"
       >
-        <!-- 订单头部 -->
+        
         <div class="order-header-info">
           <span class="order-time">{{ order.createTime }}</span>
           <span class="order-status" :class="getStatusClass(order.orderStatus)">
@@ -38,7 +31,7 @@
           </span>
         </div>
 
-        <!-- 订单商品 -->
+
         <div class="order-goods">
           <div
             class="goods-item"
@@ -49,22 +42,21 @@
             <div class="goods-info">
               <div class="goods-name">{{ item.goodsName }}</div>
               <div class="goods-price-count">
-                <span class="price">¥{{ item.price }}</span>
+                <span class="price">¥{{ formatPrice(item.price) }}</span>
                 <span class="count">x{{ item.count }}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 订单底部 -->
         <div class="order-footer">
-          <span class="total-label">共{{ getTotalCount(order) }}件商品</span>
+          <span class="total-label">共{{ order.orderCartDTO?.length || 0 }}件</span>
           <span class="total-amount">
-            实付: <span class="amount">¥{{ order.totalPrice }}</span>
+            实付: <span class="amount">¥{{ formatPrice(order.totalPrice) }}</span>
           </span>
         </div>
 
-        <!-- 订单操作 -->
+        
         <div class="order-actions">
           <el-button
             v-if="order.orderStatus === 0"
@@ -80,7 +72,7 @@
             size="small"
             @click.stop="handleConfirm(order)"
           >
-            确认收货
+            确认签收
           </el-button>
           <el-button
             v-if="order.orderStatus === 0"
@@ -92,7 +84,7 @@
         </div>
       </div>
 
-      <!-- 空状态 -->
+      
       <div class="empty-state" v-if="state.list.length === 0 && !state.loading">
         <el-empty description="暂无订单">
           <el-button type="primary" @click="goToHome">去购物</el-button>
@@ -100,7 +92,7 @@
       </div>
     </div>
 
-    <!-- 加载更多 -->
+    
     <div class="load-more" v-if="state.list.length > 0">
       <el-button
         v-if="!state.finished"
@@ -119,20 +111,20 @@
 import { reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
-import { useOrderStore } from '@/stores/user/order'
+import { getOrderPage, payOrder, confirmOrder, cancelOrder } from '@/api/user/order'
+import { formatPrice } from '@/utils/format'
+import PageHeader from '@/components/PageHeader.vue'
 
 const router = useRouter()
-const orderStore = useOrderStore()
 
-// 订单状态标签
 const tabs = [
   { label: '全部', value: '' },
   { label: '待支付', value: '0' },
   { label: '已支付', value: '1' },
+  { label: '配货完成', value: '2' },
   { label: '出库成功', value: '3' },
   { label: '交易成功', value: '4' },
-  { label: '已取消', value: '-1' }
+  { label: '已关闭', value: '-1' }
 ]
 
 const state = reactive({
@@ -142,45 +134,35 @@ const state = reactive({
   finished: false,
   page: 1,
   pageSize: 10,
-  total: 0,
-  cancelStatusFilter: false // 是否筛选取消状态
+  total: 0
 })
 
-// 获取状态文本
 const getStatusText = (status: number) => {
-  const statusMap: Record<number, string> = {
-    [-3]: '取消订单关闭',
-    [-2]: '超时关闭',
-    [-1]: '确认订单关闭',
+  const map: Record<number, string> = {
     0: '待支付',
     1: '已支付',
+    2: '配货完成',
     3: '出库成功',
-    4: '交易成功'
+    4: '交易成功',
+    [-1]: '已关闭',
+    [-2]: '已关闭',
+    [-3]: '已关闭'
   }
-  return statusMap[status] || '未知状态'
+  return map[status] || ''
 }
 
-// 获取状态样式类
 const getStatusClass = (status: number) => {
-  const classMap: Record<number, string> = {
-    [-3]: 'status-cancelled',
-    [-2]: 'status-cancelled',
-    [-1]: 'status-cancelled',
+  if (status < 0) return 'status-cancelled'
+  const map: Record<number, string> = {
     0: 'status-unpaid',
     1: 'status-paid',
-    3: 'status-express',
-    4: 'status-success'
+    2: 'status-shipped',
+    3: 'status-shipped',
+    4: 'status-completed'
   }
-  return classMap[status] || ''
+  return map[status] || ''
 }
 
-// 获取商品总数
-const getTotalCount = (order: any) => {
-  if (!order.orderCartDTO) return 0
-  return order.orderCartDTO.reduce((sum: number, item: any) => sum + item.count, 0)
-}
-
-// 加载订单列表
 const loadOrderList = async (isRefresh = false) => {
   if (state.loading) return
   
@@ -191,27 +173,15 @@ const loadOrderList = async (isRefresh = false) => {
       state.list = []
     }
     
-    const res = await orderStore.getOrderPage({
+    const res = await getOrderPage({
       pageNumber: state.page,
       pageSize: state.pageSize,
-      orderStatus: state.status ? Number(state.status) : undefined,
-      orderNo: ''
-    } as any)
+      orderStatus: state.status ? Number(state.status) : undefined
+    })
     
-    let records = res.records || []
-    
-    // 如果选择了已取消分类，需要在前端过滤出所有取消状态的订单
-    if (state.cancelStatusFilter) {
-      records = records.filter((order: any) => {
-        const status = order.status || order.orderStatus
-        return status === -1 || status === -2 || status === -3
-      })
-      state.total = records.length
-    } else {
-      state.total = res.total || 0
-    }
-    
+    const records = res.records || []
     state.list = isRefresh ? records : [...state.list, ...records]
+    state.total = res.total || 0
     state.finished = state.list.length >= state.total
   } catch (error) {
     ElMessage.error('加载订单失败')
@@ -221,47 +191,34 @@ const loadOrderList = async (isRefresh = false) => {
   }
 }
 
-// 切换标签
 const handleTabChange = (status: string) => {
-  // 如果选择的是已取消(-1)，需要特殊处理，查询所有取消状态的订单
-  if (status === '-1') {
-    state.status = '' // 清空状态筛选
-    state.cancelStatusFilter = true // 标记为取消状态筛选
-  } else {
-    state.status = status
-    state.cancelStatusFilter = false
-  }
+  state.status = status
   loadOrderList(true)
 }
 
-// 加载更多
 const loadMore = () => {
   if (state.finished || state.loading) return
   state.page++
   loadOrderList()
 }
 
-// 返回上一页
 const goBack = () => {
   router.back()
 }
 
-// 跳转到首页
 const goToHome = () => {
   router.push('/home')
 }
 
-// 跳转到订单详情
 const goToDetail = (orderNo: string) => {
   router.push(`/order/${orderNo}`)
 }
 
-// 支付订单
 const handlePay = async (order: any) => {
   try {
-    await orderStore.payOrder({
+    await payOrder({
       orderNo: order.orderNo,
-      payType: 1 // 支付宝
+      payType: 1
     })
     ElMessage.success('支付成功')
     loadOrderList(true)
@@ -270,7 +227,6 @@ const handlePay = async (order: any) => {
   }
 }
 
-// 确认收货
 const handleConfirm = async (order: any) => {
   try {
     await ElMessageBox.confirm('确认已收到商品？', '提示', {
@@ -279,7 +235,7 @@ const handleConfirm = async (order: any) => {
       type: 'warning'
     })
     
-    await orderStore.confirmOrder(order.orderNo)
+    await confirmOrder(order.orderNo)
     ElMessage.success('确认收货成功')
     loadOrderList(true)
   } catch (error) {
@@ -289,7 +245,6 @@ const handleConfirm = async (order: any) => {
   }
 }
 
-// 取消订单
 const handleCancel = async (order: any) => {
   try {
     await ElMessageBox.confirm('确定要取消该订单吗？', '提示', {
@@ -298,7 +253,7 @@ const handleCancel = async (order: any) => {
       type: 'warning'
     })
     
-    await orderStore.cancelOrder(order.orderNo)
+    await cancelOrder(order.orderNo)
     ElMessage.success('取消订单成功')
     loadOrderList(true)
   } catch (error) {

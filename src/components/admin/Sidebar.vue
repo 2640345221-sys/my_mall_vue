@@ -32,6 +32,10 @@
         <el-icon><Setting /></el-icon>
         <span>首页配置</span>
       </el-menu-item>
+      <el-menu-item index="/admin/seckill">
+        <el-icon><Timer /></el-icon>
+        <span>秒杀管理</span>
+      </el-menu-item>
     </el-menu>
   </aside>
 </template>
@@ -45,8 +49,8 @@ import {
   Document,
   User,
   Menu,
-  Picture,
-  Setting
+  Setting,
+  Timer
 } from '@element-plus/icons-vue'
 
 const props = defineProps<{

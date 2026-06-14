@@ -80,7 +80,7 @@ const form = reactive({
 
 const loading = ref(false)
 
-const validateConfirmPassword = (rule: any, value: any, callback: any) => {
+const validateConfirmPassword = (_rule: any, value: any, callback: any) => {
   if (value === '') {
     callback(new Error('请确认密码'))
   } else if (value !== form.password) {

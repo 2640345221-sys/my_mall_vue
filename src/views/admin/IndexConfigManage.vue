@@ -1,17 +1,13 @@
 <template>
-  <div class="admin-layout">
-    <admin-sidebar active-menu="/admin/index-config" />
-    <div class="main-content">
-      <admin-header title="首页配置管理" />
-      <div class="page-content">
-        <!-- 配置类型选择 -->
+  <div>
+        
         <el-tabs v-model="state.configType" @tab-change="handleTabChange">
           <el-tab-pane label="热销商品" name="3" />
           <el-tab-pane label="新品上线" name="4" />
           <el-tab-pane label="为你推荐" name="5" />
         </el-tabs>
 
-        <!-- 操作栏 -->
+        
         <div class="action-bar">
           <el-button type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>
@@ -19,7 +15,7 @@
           </el-button>
         </div>
 
-        <!-- 配置表格 -->
+        
         <el-table :data="state.configList" v-loading="state.loading" border>
           <el-table-column prop="id" label="ID" min-width="80" />
           <el-table-column prop="name" label="配置名称" min-width="200" />
@@ -48,34 +44,9 @@
           </el-table-column>
         </el-table>
 
-        <!-- 分页 -->
-        <div class="pagination">
-          <el-pagination
-            v-model:current-page="state.page"
-            v-model:page-size="state.pageSize"
-            :total="state.total"
-            layout="prev, pager, next"
-            :prev-text="'上一页'"
-            :next-text="'下一页'"
-            @current-change="handleCurrentChange"
-          />
-          <div class="pagination-info">
-            <span class="jump-label">跳转到</span>
-            <el-input-number
-              v-model="state.jumpPage"
-              :min="1"
-              :max="getTotalPages() || 1"
-              size="small"
-              style="width: 80px; margin: 0 8px"
-            />
-            <span class="total-pages">共 {{ getTotalPages() || 0 }} 页</span>
-            <span class="total-records">共 {{ state.total }} 条</span>
-          </div>
-        </div>
-      </div>
-    </div>
+        <AdminPagination :total="state.total" :model-page="state.page" @page-change="onPageChange" />
 
-    <!-- 新增/编辑弹窗 -->
+  
     <el-dialog
       v-model="state.dialogVisible"
       :title="state.dialogType === 'add' ? '新增配置' : '编辑配置'"
@@ -118,14 +89,11 @@
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import AdminSidebar from '@/components/admin/Sidebar.vue'
-import AdminHeader from '@/components/admin/Header.vue'
-import { useAdminIndexStore } from '@/stores/admin/index'
-import { useAdminGoodsStore } from '@/stores/admin/goods'
+import { getIndexConfigPage, deleteIndexConfig, updateIndexConfig, addIndexConfig } from '@/api/admin/indexConfig'
+import { pageGoods } from '@/api/admin/goods'
+import AdminPagination from '@/components/AdminPagination.vue'
 
 const formRef = ref()
-const adminIndexStore = useAdminIndexStore()
-const adminGoodsStore = useAdminGoodsStore()
 
 const state = reactive({
   configType: '4',
@@ -138,7 +106,6 @@ const state = reactive({
   page: 1,
   pageSize: 10,
   total: 0,
-  jumpPage: 1,
   form: {
     id: null as number | null,
     name: '',
@@ -157,53 +124,18 @@ const formRules = {
 const loadConfigList = async () => {
   state.loading = true
   try {
-    const res = await adminIndexStore.getIndexConfigPage({
+    const res = await getIndexConfigPage({
       pageNumber: state.page,
       pageSize: state.pageSize,
       type: parseInt(state.configType)
     })
     
-    if (res && res.records) {
-      state.configList = res.records || []
-      state.total = res.total || 0
-    } else if (Array.isArray(res)) {
-      state.configList = res
-      state.total = res.length
-    } else {
-      state.configList = []
-      state.total = 0
-    }
+    state.configList = res?.records || []
+    state.total = res?.total || 0
   } catch (error: any) {
     ElMessage.error(`加载配置列表失败: ${error.response?.data?.message || error.message}`)
   } finally {
     state.loading = false
-  }
-}
-
-const searchGoods = async (keyword: string) => {
-  if (!keyword) return
-  state.goodsLoading = true
-  try {
-    const res = await adminGoodsStore.pageGoods({
-      pageNumber: 1,
-      pageSize: 20,
-      goodsName: keyword
-    })
-    
-    // 根据实际响应结构调整数据赋值
-    if (res && res.data?.records) {
-      state.goodsOptions = res.data.records
-    } else if (res && res.records) {
-      state.goodsOptions = res.records
-    } else if (Array.isArray(res)) {
-      state.goodsOptions = res
-    } else {
-      state.goodsOptions = []
-    }
-  } catch (error: any) {
-    console.error('搜索商品失败:', error)
-  } finally {
-    state.goodsLoading = false
   }
 }
 
@@ -221,7 +153,6 @@ const handleAdd = () => {
     goodsId: null,
     rank: 0
   }
-  state.goodsOptions = []
   state.dialogVisible = true
 }
 
@@ -234,11 +165,6 @@ const handleEdit = (row: any) => {
     goodsId: row.goodsId,
     rank: row.rank
   }
-  // 加载当前商品信息
-  state.goodsOptions = [{
-    id: row.goodsId,
-    name: '商品ID: ' + row.goodsId
-  }]
   state.dialogVisible = true
 }
 
@@ -249,7 +175,7 @@ const handleSubmit = async () => {
   state.submitting = true
   try {
     const params = {
-      id: state.form.id,
+      id: state.form.id ?? undefined,
       name: state.form.name,
       type: state.form.type,
       goodsId: state.form.goodsId,
@@ -257,10 +183,10 @@ const handleSubmit = async () => {
     }
 
     if (state.dialogType === 'add') {
-      await adminIndexStore.addIndexConfig(params)
+      await addIndexConfig(params as any)
       ElMessage.success('新增成功')
     } else {
-      await adminIndexStore.updateIndexConfig(params)
+      await updateIndexConfig(params as any)
       ElMessage.success('修改成功')
     }
 
@@ -276,7 +202,7 @@ const handleSubmit = async () => {
 const handleDelete = async (row: any) => {
   try {
     await ElMessageBox.confirm('确定要删除该配置吗？', '提示', { type: 'warning' })
-    await adminIndexStore.deleteIndexConfig([row.id])
+    await deleteIndexConfig([row.id])
     ElMessage.success('删除成功')
     loadConfigList()
   } catch (error: any) {
@@ -286,42 +212,17 @@ const handleDelete = async (row: any) => {
   }
 }
 
-const handleCurrentChange = (page: number) => {
-  state.page = page
-  loadConfigList()
-}
+function onPageChange(p: number) { state.page = p; loadConfigList() }
 
-// 计算总页数
-const getTotalPages = (): number => {
-  const total = Number(state.total) || 0
-  const pageSize = Number(state.pageSize) || 10
-  
-  if (total <= 0 || pageSize <= 0) {
-    return 0
-  }
-  
-  return Math.ceil(total / pageSize)
-}
-
-// 加载所有商品列表
 const loadAllGoods = async () => {
   try {
-    const res = await adminGoodsStore.pageGoods({
+    const res = await pageGoods({
       pageNumber: 1,
-      pageSize: 1000, // 加载足够多的商品
+      pageSize: 1000,
       goodsName: ''
     })
     
-    // 根据实际响应结构调整数据赋值
-    if (res && res.data?.records) {
-      state.allGoodsList = res.data.records
-    } else if (res && res.records) {
-      state.allGoodsList = res.records
-    } else if (Array.isArray(res)) {
-      state.allGoodsList = res
-    } else {
-      state.allGoodsList = []
-    }
+    state.allGoodsList = res?.records || []
   } catch (error: any) {
     console.error('加载商品列表失败:', error)
   }

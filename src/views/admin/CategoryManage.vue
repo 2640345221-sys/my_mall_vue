@@ -1,10 +1,6 @@
 <template>
-  <div class="admin-layout">
-    <admin-sidebar active-menu="/admin/category" />
-    <div class="main-content">
-      <admin-header title="分类管理" />
-      <div class="page-content">
-        <!-- 操作栏 -->
+  <div>
+        
         <div class="action-bar">
           <el-button type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>
@@ -12,7 +8,7 @@
           </el-button>
         </div>
 
-        <!-- 分类表格 -->
+        
         <el-table :data="state.categoryList" v-loading="state.loading" row-key="id">
           <el-table-column prop="id" label="ID" min-width="80" />
           <el-table-column prop="name" label="分类名称" min-width="200" />
@@ -35,10 +31,8 @@
             </template>
           </el-table-column>
         </el-table>
-      </div>
-    </div>
 
-    <!-- 新增/编辑弹窗 -->
+  
     <el-dialog
       v-model="state.dialogVisible"
       :title="state.dialogType === 'add' ? '新增分类' : '编辑分类'"
@@ -76,12 +70,9 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import AdminSidebar from '@/components/admin/Sidebar.vue'
-import AdminHeader from '@/components/admin/Header.vue'
-import { useAdminCategoryStore } from '@/stores/admin/category'
+import { insertCategory, deleteCategory, updateCategory, getAll } from '@/api/admin/category'
 
 const formRef = ref()
-const adminCategoryStore = useAdminCategoryStore()
 
 const state = reactive({
   categoryList: [] as any[],
@@ -97,22 +88,8 @@ const state = reactive({
   }
 })
 
-// 二级分类列表
 const secondLevelCategories = computed(() => {
   return state.categoryList.filter(item => item.level === 2)
-})
-
-// 调试：在组件挂载后立即检查数据
-onMounted(() => {
-  console.log('组件挂载完成，开始加载分类列表')
-  loadCategoryList()
-  
-  // 2秒后再次检查数据状态
-  setTimeout(() => {
-    console.log('2秒后分类列表状态:', state.categoryList)
-    console.log('分类列表长度:', state.categoryList.length)
-    console.log('加载状态:', state.loading)
-  }, 2000)
 })
 
 const formRules = {
@@ -124,23 +101,11 @@ const formRules = {
 const loadCategoryList = async () => {
   state.loading = true
   try {
-    // 使用store方法获取分类列表
-    const data = await adminCategoryStore.getAll()
-    
-    // 详细检查数据结构
-    console.log('store返回的数据:', data)
-    console.log('数据类型:', typeof data)
-    console.log('是否是数组:', Array.isArray(data))
-    
-    // 直接使用store返回的数据（已经是处理后的数组）
+    const data = await getAll()
+
     if (Array.isArray(data)) {
-      // 使用响应式更新，确保Vue能检测到变化
       state.categoryList = [...data]
-      console.log('分类列表:', state.categoryList)
-      console.log('分类列表长度:', state.categoryList.length)
-      console.log('第一条数据:', state.categoryList[0])
     } else {
-      console.warn('返回的数据不是数组:', data)
       state.categoryList = []
     }
   } catch (error: any) {
@@ -153,7 +118,6 @@ const loadCategoryList = async () => {
 
 const handleAdd = () => {
   state.dialogType = 'add'
-  // 默认选中第一个二级分类
   const firstSecondLevel = secondLevelCategories.value[0]
   state.form = {
     id: null,
@@ -181,20 +145,17 @@ const handleSubmit = async () => {
 
   state.submitting = true
   try {
-    // 构建正确的参数格式（固定为三级分类）
-    const params = {
+    const params: any = {
       ...state.form,
       level: 3
     }
-    
-    // 新增时移除id字段
+
     if (state.dialogType === 'add') {
       delete params.id
-      await adminCategoryStore.insertCategory(params)
+      await insertCategory(params)
       ElMessage.success('新增成功')
     } else {
-      // 修改时保留id字段
-      await adminCategoryStore.updateCategory(params)
+      await updateCategory(params)
       ElMessage.success('修改成功')
     }
     state.dialogVisible = false
@@ -212,8 +173,7 @@ const handleSubmit = async () => {
 const handleDelete = async (row: any) => {
   try {
     await ElMessageBox.confirm('确定要删除该分类吗？', '提示', { type: 'warning' })
-    // 使用store方法删除分类
-    await adminCategoryStore.deleteCategory([row.id])
+    await deleteCategory([row.id])
     ElMessage.success('删除成功')
     loadCategoryList()
   } catch (error: any) {

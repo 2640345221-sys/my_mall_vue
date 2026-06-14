@@ -1,6 +1,6 @@
 <template>
   <div class="search-container">
-    <!-- 顶部搜索栏 -->
+    
     <header class="search-header">
       <div class="header-left" @click="goBack">
         <el-icon><ArrowLeft /></el-icon>
@@ -20,7 +20,7 @@
       </div>
     </header>
 
-    <!-- 排序标签 -->
+    
     <div class="sort-tabs" v-if="state.productList.length > 0">
       <div
         class="tab-item"
@@ -48,7 +48,7 @@
       </div>
     </div>
 
-    <!-- 商品列表 -->
+    
     <div class="product-list" v-loading="state.loading">
       <div
         class="product-item"
@@ -60,25 +60,25 @@
         <div class="product-info">
           <div class="product-name">{{ item.name }}</div>
           <div class="product-intro">{{ item.intro }}</div>
-          <div class="product-price">¥{{ item.sellingPrice }}</div>
+          <div class="product-price">¥{{ formatPrice(item.sellingPrice) }}</div>
         </div>
       </div>
 
-      <!-- 空状态 -->
+      
       <div class="empty-state" v-if="state.productList.length === 0 && !state.loading && state.searched">
         <el-empty description="没有找到相关商品">
           <el-button type="primary" @click="goToHome">去首页看看</el-button>
         </el-empty>
       </div>
 
-      <!-- 搜索提示 -->
+      
       <div class="search-tip" v-if="!state.searched && !state.loading">
         <el-icon :size="60" color="#ddd"><Search /></el-icon>
         <p>输入关键词搜索商品</p>
       </div>
     </div>
 
-    <!-- 加载更多 -->
+    
     <div class="load-more" v-if="state.productList.length > 0">
       <el-button
         v-if="!state.finished"
@@ -91,7 +91,7 @@
       <span v-else class="no-more">没有更多了</span>
     </div>
 
-    <!-- 历史搜索 -->
+    
     <div class="history-section" v-if="state.history.length > 0 && !state.searched">
       <div class="history-header">
         <span>历史搜索</span>
@@ -116,11 +116,11 @@ import { reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Search, CircleClose, ArrowUp, ArrowDown, Delete } from '@element-plus/icons-vue'
-import { useGoodsStore } from '@/stores/user/goods'
+import { search } from '@/api/user/goods'
+import { formatPrice } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
-const goodsStore = useGoodsStore()
 
 const state = reactive({
   keyword: '',
@@ -137,7 +137,6 @@ const state = reactive({
   history: [] as string[]
 })
 
-// 初始化
 const init = () => {
   const { keyword, categoryId } = route.query
   if (keyword) {
@@ -147,16 +146,13 @@ const init = () => {
     state.categoryId = Number(categoryId)
   }
   
-  // 加载历史搜索
   loadHistory()
   
-  // 如果有关键词或分类ID，自动搜索
   if (state.keyword || state.categoryId) {
     handleSearch()
   }
 }
 
-// 加载历史搜索
 const loadHistory = () => {
   const history = localStorage.getItem('searchHistory')
   if (history) {
@@ -164,11 +160,9 @@ const loadHistory = () => {
   }
 }
 
-// 保存历史搜索
 const saveHistory = () => {
   if (!state.keyword) return
   
-  // 去重并限制数量
   const index = state.history.indexOf(state.keyword)
   if (index > -1) {
     state.history.splice(index, 1)
@@ -181,13 +175,11 @@ const saveHistory = () => {
   localStorage.setItem('searchHistory', JSON.stringify(state.history))
 }
 
-// 清空历史搜索
 const clearHistory = () => {
   state.history = []
   localStorage.removeItem('searchHistory')
 }
 
-// 搜索商品
 const searchGoods = async (isRefresh = false) => {
   if (state.loading) return
   
@@ -206,12 +198,11 @@ const searchGoods = async (isRefresh = false) => {
       orderBy: state.orderBy || undefined
     }
     
-    // 如果是价格排序，添加排序方向
     if (state.orderBy === 'price') {
       params.sort = state.priceAsc ? 'asc' : 'desc'
     }
     
-    const res = await goodsStore.search(params)
+    const res = await search(params)
     const records = res.records || []
     
     state.productList = isRefresh ? records : [...state.productList, ...records]
@@ -219,7 +210,6 @@ const searchGoods = async (isRefresh = false) => {
     state.finished = state.productList.length >= state.total
     state.searched = true
     
-    // 保存搜索历史
     if (isRefresh && state.keyword) {
       saveHistory()
     }
@@ -231,7 +221,6 @@ const searchGoods = async (isRefresh = false) => {
   }
 }
 
-// 执行搜索
 const handleSearch = () => {
   if (!state.keyword && !state.categoryId) {
     ElMessage.warning('请输入搜索关键词')
@@ -240,14 +229,12 @@ const handleSearch = () => {
   searchGoods(true)
 }
 
-// 清空关键词
 const clearKeyword = () => {
   state.keyword = ''
   state.searched = false
   state.productList = []
 }
 
-// 切换排序
 const changeOrder = (orderBy: string) => {
   if (state.orderBy === orderBy && orderBy === 'price') {
     state.priceAsc = !state.priceAsc
@@ -258,30 +245,25 @@ const changeOrder = (orderBy: string) => {
   searchGoods(true)
 }
 
-// 从历史搜索
 const searchByHistory = (keyword: string) => {
   state.keyword = keyword
   handleSearch()
 }
 
-// 加载更多
 const loadMore = () => {
   if (state.finished || state.loading) return
   state.page++
   searchGoods()
 }
 
-// 返回上一页
 const goBack = () => {
   router.back()
 }
 
-// 跳转到首页
 const goToHome = () => {
   router.push('/home')
 }
 
-// 跳转到商品详情
 const goToDetail = (id: number) => {
   router.push(`/goods/${id}`)
 }

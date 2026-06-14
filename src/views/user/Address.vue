@@ -1,15 +1,8 @@
 <template>
   <div class="address-container">
-    <!-- 顶部导航 -->
-    <header class="address-header">
-      <div class="header-left" @click="goBack">
-        <el-icon><ArrowLeft /></el-icon>
-      </div>
-      <div class="header-title">地址管理</div>
-      <div class="header-right"></div>
-    </header>
+    <PageHeader title="地址管理" @back="goBack" />
 
-    <!-- 地址列表 -->
+    
     <div class="address-list" v-if="state.list.length > 0">
       <div
         class="address-item"
@@ -22,10 +15,10 @@
           <div class="item-header">
             <span class="name">{{ item.username }}</span>
             <span class="phone">{{ item.userPhone }}</span>
-            <el-tag v-if="item.defaultFlag" type="danger" size="small" class="default-tag">默认</el-tag>
+            <el-tag v-if="item.isDefault" type="danger" size="small" class="default-tag">默认</el-tag>
           </div>
           <div class="item-address">
-            {{ item.provinceName }} {{ item.cityName }} {{ item.regionName }} {{ item.detailAddress }}
+            {{ item.province }} {{ item.city }} {{ item.region }} {{ item.detailAddress }}
           </div>
         </div>
         <div class="item-actions">
@@ -41,14 +34,14 @@
       </div>
     </div>
 
-    <!-- 空状态 -->
+    
     <div class="empty-state" v-else>
       <el-empty description="暂无收货地址">
         <el-button type="primary" @click="handleAdd">添加地址</el-button>
       </el-empty>
     </div>
 
-    <!-- 底部添加按钮 -->
+    
     <div class="bottom-bar">
       <el-button type="primary" size="large" @click="handleAdd" :icon="Plus">
         新建地址
@@ -61,12 +54,12 @@
 import { reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Edit, Delete, Plus } from '@element-plus/icons-vue'
-import { useAddressStore } from '@/stores/user/address'
+import { Edit, Delete, Plus } from '@element-plus/icons-vue'
+import { getAllAddress, deleteById } from '@/api/user/address'
+import PageHeader from '@/components/PageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
-const addressStore = useAddressStore()
 
 const state = reactive({
   list: [] as Array<any>,
@@ -74,23 +67,18 @@ const state = reactive({
   from: ''
 })
 
-// 初始化
 const init = async () => {
-  // 获取来源页面
   state.from = (route.query.from as string) || ''
   
-  // 加载地址列表
   await loadAddressList()
 }
 
-// 加载地址列表
 const loadAddressList = async () => {
   try {
-    const res = await addressStore.getAllAddress()
+    const res = await getAllAddress()
     state.list = res || []
     
-    // 如果有默认地址，选中它
-    const defaultAddress = state.list.find((item: any) => item.defaultFlag)
+    const defaultAddress = state.list.find((item: any) => item.isDefault)
     if (defaultAddress) {
       state.selectedId = defaultAddress.id
     }
@@ -100,7 +88,6 @@ const loadAddressList = async () => {
   }
 }
 
-// 返回上一页
 const goBack = () => {
   if (state.from === 'create-order') {
     router.back()
@@ -109,10 +96,8 @@ const goBack = () => {
   }
 }
 
-// 选择地址（从创建订单页面进入时）
 const handleSelect = (item: any) => {
   if (state.from === 'create-order') {
-    // 返回创建订单页面，传递选中的地址ID
     router.push({
       path: '/create-order',
       query: {
@@ -121,12 +106,10 @@ const handleSelect = (item: any) => {
       }
     })
   } else {
-    // 只是选中，不跳转
     state.selectedId = item.id
   }
 }
 
-// 添加地址
 const handleAdd = () => {
   router.push({
     path: '/address-edit',
@@ -137,7 +120,6 @@ const handleAdd = () => {
   })
 }
 
-// 编辑地址
 const handleEdit = (item: any) => {
   router.push({
     path: '/address-edit',
@@ -149,7 +131,6 @@ const handleEdit = (item: any) => {
   })
 }
 
-// 删除地址
 const handleDelete = async (item: any) => {
   try {
     await ElMessageBox.confirm('确定要删除该地址吗？', '提示', {
@@ -158,7 +139,7 @@ const handleDelete = async (item: any) => {
       type: 'warning'
     })
     
-    await addressStore.deleteAddress(item.id)
+    await deleteById(item.id)
     ElMessage.success('删除成功')
     loadAddressList()
   } catch (error) {

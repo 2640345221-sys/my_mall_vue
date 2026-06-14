@@ -1,13 +1,12 @@
 <template>
   <div class="user-container">
-    <!-- 顶部导航 -->
-    <header class="user-header">
-      <div class="header-left"></div>
-      <div class="header-title">我的</div>
-      <div class="header-right"></div>
-    </header>
+    <PageHeader title="我的" :showBack="false">
+      <template #right>
+        <el-icon @click="goToSetting" style="cursor:pointer"><Setting /></el-icon>
+      </template>
+    </PageHeader>
 
-    <!-- 用户信息卡片 -->
+    
     <div class="user-card" v-if="state.user.id">
       <div class="user-avatar">
         <el-avatar :size="60" :src="state.user.avatar || defaultAvatar" />
@@ -16,14 +15,17 @@
         <div class="user-name">{{ state.user.nickName || state.user.loginName }}</div>
         <div class="user-sign">{{ state.user.introduceSign || '这个人很懒，什么都没写~' }}</div>
       </div>
+      <div class="user-arrow">
+        <el-icon><ArrowRight /></el-icon>
+      </div>
     </div>
 
-    <!-- 骨架屏加载 -->
+    
     <div class="user-card skeleton" v-else>
       <el-skeleton :rows="2" animated />
     </div>
 
-    <!-- 订单入口 -->
+    
     <div class="order-entry">
       <div class="entry-header" @click="goToOrder">
         <span class="title">我的订单</span>
@@ -49,7 +51,7 @@
       </div>
     </div>
 
-    <!-- 功能列表 -->
+    
     <div class="function-list">
       <div class="function-item" @click="goToAddress">
         <div class="item-left">
@@ -74,32 +76,14 @@
       </div>
     </div>
 
-    <!-- 退出登录 -->
+    
     <div class="logout-section">
       <el-button type="danger" size="large" @click="handleLogout">
         退出登录
       </el-button>
     </div>
 
-    <!-- 底部导航 -->
-    <nav class="bottom-nav">
-      <router-link to="/home" class="nav-item">
-        <el-icon><HomeFilled /></el-icon>
-        <span>首页</span>
-      </router-link>
-      <router-link to="/category" class="nav-item">
-        <el-icon><Grid /></el-icon>
-        <span>分类</span>
-      </router-link>
-      <router-link to="/cart" class="nav-item">
-        <el-icon><ShoppingCart /></el-icon>
-        <span>购物车</span>
-      </router-link>
-      <router-link to="/user" class="nav-item active">
-        <el-icon><User /></el-icon>
-        <span>我的</span>
-      </router-link>
-    </nav>
+    <BottomNav />
   </div>
 </template>
 
@@ -108,6 +92,7 @@ import { reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
+  Setting,
   ArrowRight,
   Wallet,
   Box,
@@ -115,12 +100,11 @@ import {
   ChatDotRound,
   Location,
   User,
-  InfoFilled,
-  HomeFilled,
-  Grid,
-  ShoppingCart
+  InfoFilled
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user/user'
+import PageHeader from '@/components/PageHeader.vue'
+import BottomNav from '@/components/BottomNav.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -132,12 +116,10 @@ const state = reactive({
   loading: false
 })
 
-// 加载用户信息
 const loadUserInfo = async () => {
   state.loading = true
   try {
-    const user = await userStore.getInfo()
-    state.user = user
+    state.user = userStore.userInfo || {}
   } catch (error) {
     console.error('加载用户信息失败', error)
   } finally {
@@ -145,12 +127,14 @@ const loadUserInfo = async () => {
   }
 }
 
-// 跳转到订单列表
+const goToSetting = () => {
+  router.push('/user/setting')
+}
+
 const goToOrder = () => {
   router.push('/order')
 }
 
-// 按状态跳转到订单列表
 const goToOrderByStatus = (status: string) => {
   router.push({
     path: '/order',
@@ -158,7 +142,6 @@ const goToOrderByStatus = (status: string) => {
   })
 }
 
-// 跳转到地址管理
 const goToAddress = () => {
   router.push({
     path: '/address',
@@ -166,17 +149,14 @@ const goToAddress = () => {
   })
 }
 
-// 跳转到个人资料
 const goToProfile = () => {
   router.push('/user/profile')
 }
 
-// 跳转到关于我们
 const goToAbout = () => {
   router.push('/about')
 }
 
-// 退出登录
 const handleLogout = async () => {
   try {
     await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
@@ -185,14 +165,12 @@ const handleLogout = async () => {
       type: 'warning'
     })
 
-    // 清除登录信息
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
 
     ElMessage.success('退出成功')
     router.push('/login')
   } catch (error) {
-    // 用户取消
   }
 }
 

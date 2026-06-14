@@ -1,64 +1,57 @@
 <template>
   <div class="order-detail-container">
-    <!-- 顶部导航 -->
-    <header class="detail-header">
-      <div class="header-left" @click="goBack">
-        <el-icon><ArrowLeft /></el-icon>
-      </div>
-      <div class="header-title">订单详情</div>
-      <div class="header-right"></div>
-    </header>
+    <PageHeader title="订单详情" @back="goBack" />
 
-    <!-- 订单状态 -->
+    
     <div class="status-section" v-if="state.order.orderNo">
       <div class="status-icon">
-        <el-icon :size="40" :color="getStatusColor(getOrderStatus())">
-          <component :is="getStatusIcon(getOrderStatus())" />
+        <el-icon :size="40" :color="getStatusColor(state.order.orderStatus)">
+          <component :is="getStatusIcon(state.order.orderStatus)" />
         </el-icon>
       </div>
-      <div class="status-text">{{ getStatusText(getOrderStatus()) }}</div>
-      <div class="status-desc">{{ getStatusDesc(getOrderStatus()) }}</div>
+      <div class="status-text">{{ getStatusText(state.order.orderStatus) }}</div>
+      <div class="status-desc">{{ getStatusDesc(state.order.orderStatus) }}</div>
     </div>
 
-    <!-- 收货地址 -->
-    <div class="address-section" v-if="state.order.address">
+    
+    <div class="address-section" v-if="state.order.orderAddress">
       <div class="section-icon">
         <el-icon><Location /></el-icon>
       </div>
       <div class="address-info">
         <div class="address-header">
-          <span class="name">{{ state.order.address.username }}</span>
-          <span class="phone">{{ state.order.address.userPhone }}</span>
+          <span class="name">{{ state.order.orderAddress.username }}</span>
+          <span class="phone">{{ state.order.orderAddress.userPhone }}</span>
         </div>
         <div class="address-detail">
-          {{ state.order.address.provinceName }} {{ state.order.address.cityName }} {{ state.order.address.regionName }} {{ state.order.address.detailAddress }}
+          {{ state.order.orderAddress.province }} {{ state.order.orderAddress.city }} {{ state.order.orderAddress.region }} {{ state.order.orderAddress.detailAddress }}
         </div>
       </div>
     </div>
 
-    <!-- 商品列表 -->
+    
     <div class="goods-section">
       <h3 class="section-title">商品信息</h3>
       <div class="goods-list">
         <div
           class="goods-item"
-          v-for="item in state.order.orderItems"
-          :key="item.id"
+          v-for="item in state.order.orderCartDTO"
+          :key="item.goodsId"
           @click="goToGoods(item.goodsId)"
         >
-          <img :src="item.coverImg" :alt="item.name" class="goods-img" />
+          <img :src="item.coverImg" :alt="item.goodsName" class="goods-img" />
           <div class="goods-info">
-            <div class="goods-name">{{ item.name }}</div>
+            <div class="goods-name">{{ item.goodsName }}</div>
             <div class="goods-price-count">
-              <span class="price">¥{{ item.sellingPrice }}</span>
-              <span class="count">x{{ item.goodsCount }}</span>
+              <span class="price">¥{{ formatPrice(item.price) }}</span>
+              <span class="count">x{{ item.count }}</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 订单信息 -->
+    
     <div class="info-section">
       <h3 class="section-title">订单信息</h3>
       <div class="info-item">
@@ -79,11 +72,11 @@
       </div>
     </div>
 
-    <!-- 金额信息 -->
+    
     <div class="amount-section">
       <div class="amount-item">
         <span class="label">商品总额</span>
-        <span class="value">¥{{ state.order.totalPrice }}</span>
+        <span class="value">¥{{ formatPrice(state.order.totalPrice) }}</span>
       </div>
       <div class="amount-item">
         <span class="label">运费</span>
@@ -91,62 +84,53 @@
       </div>
       <div class="amount-item total">
         <span class="label">实付金额</span>
-        <span class="value">¥{{ state.order.totalPrice }}</span>
+        <span class="value">¥{{ formatPrice(state.order.totalPrice) }}</span>
       </div>
     </div>
 
-    <!-- 底部操作栏 -->
-    <div class="action-bar" v-if="state.order.orderNo">
+    
+    <div class="action-bar" v-if="state.order.orderStatus !== undefined">
       <el-button
-          v-if="getOrderStatus() === 0"
-          type="primary"
-          size="large"
-          @click="showPayDialog"
-        >
-          立即支付
-        </el-button>
-        <el-button
-          v-if="getOrderStatus() === 3"
-          type="success"
-          size="large"
-          @click="handleConfirm"
-        >
-          确认收货
-        </el-button>
-        <el-button
-          v-if="getOrderStatus() === 0"
-          size="large"
-          @click="handleCancel"
-        >
-          取消订单
-        </el-button>
+        v-if="state.order.orderStatus === 0"
+        type="primary"
+        size="large"
+        @click="showPayDialog"
+      >
+        立即支付
+      </el-button>
+      <el-button
+        v-if="state.order.orderStatus === 2"
+        type="success"
+        size="large"
+        @click="handleConfirm"
+      >
+        确认收货
+      </el-button>
+      <el-button
+        v-if="state.order.orderStatus === 0"
+        size="large"
+        @click="handleCancel"
+      >
+        取消订单
+      </el-button>
     </div>
 
-    <!-- 支付弹窗 -->
+    
     <el-dialog
       v-model="state.showPay"
       title="选择支付方式"
       width="90%"
       center
-      :before-close="handlePayClose"
     >
       <div class="pay-options">
-        <div class="pay-amount">
-          <span class="amount-label">支付金额：</span>
-          <span class="amount-value">¥{{ state.order.totalPrice || 0 }}</span>
-        </div>
-        <el-button type="primary" size="large" @click="handlePay(1)" style="width: 100%; margin-bottom: 10px;">
+        <el-button type="primary" size="large" @click="handlePay(1)">
           <el-icon><Money /></el-icon>
           支付宝支付
         </el-button>
-        <el-button type="success" size="large" @click="handlePay(2)" style="width: 100%;">
+        <el-button type="success" size="large" @click="handlePay(2)">
           <el-icon><Wallet /></el-icon>
           微信支付
         </el-button>
-      </div>
-      <div class="pay-tips">
-        <p>请选择支付方式完成订单支付</p>
-        <p>支付成功后订单状态将自动更新</p>
       </div>
     </el-dialog>
   </div>
@@ -157,7 +141,6 @@ import { reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  ArrowLeft,
   Location,
   Money,
   Wallet,
@@ -166,11 +149,12 @@ import {
   Check,
   Close
 } from '@element-plus/icons-vue'
-import { useOrderStore } from '@/stores/user/order'
+import { getById, payOrder, confirmOrder, cancelOrder } from '@/api/user/order'
+import PageHeader from '@/components/PageHeader.vue'
+import { formatPrice } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
-const orderStore = useOrderStore()
 
 const state = reactive({
   order: {} as any,
@@ -178,80 +162,50 @@ const state = reactive({
   loading: false
 })
 
-// 获取订单状态值（兼容不同字段名）
-const getOrderStatus = (): number => {
-  // 优先使用 orderStatus 字段，如果不存在则使用 status 字段
-  const status = state.order.orderStatus !== undefined ? state.order.orderStatus : state.order.status
-  
-  // 确保状态值是有效的数字
-  const statusValue = Number(status)
-  
-  // 如果转换后是 NaN，返回默认值
-  if (isNaN(statusValue)) {
-    console.warn('订单状态值无效:', status)
-    return -1 // 返回无效状态标识
-  }
-  
-  return statusValue
-}
-
-// 获取状态文本
 const getStatusText = (status: number) => {
   const statusMap: Record<number, string> = {
-    [-3]: '取消订单关闭',
-    [-2]: '超时关闭',
-    [-1]: '确认订单关闭',
-    0: '待支付',
-    1: '已支付',
-    3: '出库成功',
-    4: '交易成功'
+    0: '待付款',
+    1: '待发货',
+    2: '待收货',
+    3: '已完成',
+    4: '已取消'
   }
-  return statusMap[status] || `未知状态(${status})`
+  return statusMap[status] || '未知状态'
 }
 
-// 获取状态描述
 const getStatusDesc = (status: number) => {
   const descMap: Record<number, string> = {
-    [-3]: '订单已取消关闭',
-    [-2]: '订单已超时关闭',
-    [-1]: '订单已确认关闭',
     0: '请在30分钟内完成支付',
-    1: '订单已支付，商家正在备货',
-    3: '商品已出库，正在配送中',
-    4: '交易已完成，感谢您的购买'
+    1: '商家正在备货中',
+    2: '商品已发出，请注意查收',
+    3: '交易已完成，期待您的评价',
+    4: '订单已取消'
   }
   return descMap[status] || ''
 }
 
-// 获取状态颜色
 const getStatusColor = (status: number) => {
   const colorMap: Record<number, string> = {
-    [-3]: '#999',     // 取消订单关闭 - 灰色
-    [-2]: '#999',     // 超时关闭 - 灰色
-    [-1]: '#999',     // 确认订单关闭 - 灰色
-    0: '#f44',        // 待支付 - 红色
-    1: '#ff976a',     // 已支付 - 橙色
-    3: '#07c160',     // 出库成功 - 绿色
-    4: '#07c160'      // 交易成功 - 绿色
+    0: '#f44',
+    1: '#ff976a',
+    2: '#1989fa',
+    3: '#07c160',
+    4: '#999'
   }
   return colorMap[status] || '#999'
 }
 
-// 获取状态图标
 const getStatusIcon = (status: number) => {
   const iconMap: Record<number, any> = {
-    [-3]: Close,  // 取消订单关闭 - 关闭图标
-    [-2]: Close,  // 超时关闭 - 关闭图标
-    [-1]: Close,  // 确认订单关闭 - 关闭图标
-    0: Clock,     // 待支付 - 时钟图标
-    1: Box,       // 已支付 - 箱子图标
-    3: Box,       // 出库成功 - 箱子图标
-    4: Check      // 交易成功 - 对勾图标
+    0: Clock,
+    1: Box,
+    2: Box,
+    3: Check,
+    4: Close
   }
   return iconMap[status] || Clock
 }
 
-// 获取支付方式文本
 const getPayTypeText = (payType: number) => {
   const typeMap: Record<number, string> = {
     1: '支付宝',
@@ -260,7 +214,6 @@ const getPayTypeText = (payType: number) => {
   return typeMap[payType] || '未支付'
 }
 
-// 加载订单详情
 const loadOrderDetail = async () => {
   const { orderNo } = route.params
   if (!orderNo) {
@@ -270,93 +223,41 @@ const loadOrderDetail = async () => {
 
   state.loading = true
   try {
-    const res = await orderStore.getOrderDetail(orderNo as string)
+    const res = await getById(orderNo as string)
     state.order = res || {}
-    
-    // 检查订单状态，如果是待付款状态，确保支付按钮可见
-    if (getOrderStatus() === 0) {
-      console.log('订单状态为待付款，支付按钮已启用')
-    }
   } catch (error) {
-    console.error('加载订单详情失败:', error)
     ElMessage.error('加载订单详情失败')
   } finally {
     state.loading = false
   }
 }
 
-// 返回上一页
 const goBack = () => {
   router.back()
 }
 
-// 跳转到商品详情
 const goToGoods = (goodsId: number) => {
   router.push(`/goods/${goodsId}`)
 }
 
-// 显示支付弹窗
 const showPayDialog = () => {
-  // 确认订单状态为待付款
-  if (getOrderStatus() !== 0) {
-    ElMessage.warning('该订单无法进行支付操作')
-    return
-  }
-  
-  // 确认订单金额
-  if (!state.order.totalPrice || state.order.totalPrice <= 0) {
-    ElMessage.warning('订单金额异常，无法支付')
-    return
-  }
-  
   state.showPay = true
 }
 
-// 支付弹窗关闭前处理
-const handlePayClose = (done: () => void) => {
-  ElMessageBox.confirm('确定要取消支付吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '继续支付',
-    type: 'warning'
-  }).then(() => {
-    done()
-  }).catch(() => {
-    // 用户选择继续支付，不关闭弹窗
-  })
-}
-
-// 支付订单
 const handlePay = async (payType: number) => {
   try {
-    // 检查订单号是否存在
-    if (!state.order.orderNo) {
-      ElMessage.error('订单号不存在')
-      return
-    }
-    
-    // 调用支付接口
-    await orderStore.payOrder({
+    await payOrder({
       orderNo: state.order.orderNo,
       payType
     })
-    
     ElMessage.success('支付成功')
     state.showPay = false
-    
-    // 重新加载订单详情，更新状态
-    await loadOrderDetail()
-    
-    // 支付成功后，可以跳转到订单列表或显示成功页面
-    setTimeout(() => {
-      ElMessage.success('支付处理完成，订单状态已更新')
-    }, 500)
+    loadOrderDetail()
   } catch (error) {
-    console.error('支付失败:', error)
-    ElMessage.error('支付失败，请稍后重试')
+    ElMessage.error('支付失败')
   }
 }
 
-// 确认收货
 const handleConfirm = async () => {
   try {
     await ElMessageBox.confirm('确认已收到商品？', '提示', {
@@ -365,7 +266,7 @@ const handleConfirm = async () => {
       type: 'warning'
     })
 
-    await orderStore.confirmOrder(state.order.orderNo)
+    await confirmOrder(state.order.orderNo)
     ElMessage.success('确认收货成功')
     loadOrderDetail()
   } catch (error) {
@@ -375,7 +276,6 @@ const handleConfirm = async () => {
   }
 }
 
-// 取消订单
 const handleCancel = async () => {
   try {
     await ElMessageBox.confirm('确定要取消该订单吗？', '提示', {
@@ -384,7 +284,7 @@ const handleCancel = async () => {
       type: 'warning'
     })
 
-    await orderStore.cancelOrder(state.order.orderNo)
+    await cancelOrder(state.order.orderNo)
     ElMessage.success('取消订单成功')
     loadOrderDetail()
   } catch (error) {

@@ -1,18 +1,11 @@
 <template>
   <div class="setting-container">
-    <!-- 顶部导航 -->
-    <header class="setting-header">
-      <div class="header-left" @click="goBack">
-        <el-icon><ArrowLeft /></el-icon>
-      </div>
-      <div class="header-title">账号管理</div>
-      <div class="header-right"></div>
-    </header>
+    <PageHeader title="账号管理" @back="goBack" />
 
-    <!-- 设置表单 -->
+    
     <div class="setting-form">
       <el-form :model="state.form" label-position="top" :rules="rules" ref="formRef">
-        <!-- 昵称 -->
+        
         <el-form-item label="昵称" prop="nickName">
           <el-input
             v-model="state.form.nickName"
@@ -22,7 +15,7 @@
           />
         </el-form-item>
 
-        <!-- 个性签名 -->
+        
         <el-form-item label="个性签名" prop="introduceSign">
           <el-input
             v-model="state.form.introduceSign"
@@ -34,7 +27,7 @@
           />
         </el-form-item>
 
-        <!-- 修改密码 -->
+        
         <el-form-item label="修改密码" prop="password">
           <el-input
             v-model="state.form.password"
@@ -44,7 +37,7 @@
           />
         </el-form-item>
 
-        <!-- 确认密码 -->
+        
         <el-form-item label="确认密码" prop="confirmPassword" v-if="state.form.password">
           <el-input
             v-model="state.form.confirmPassword"
@@ -56,7 +49,7 @@
       </el-form>
     </div>
 
-    <!-- 保存按钮 -->
+    
     <div class="action-buttons">
       <el-button
         type="primary"
@@ -85,7 +78,7 @@
 import { reactive, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import PageHeader from '@/components/PageHeader.vue'
 import { useUserStore } from '@/stores/user/user'
 
 const router = useRouter()
@@ -102,7 +95,6 @@ const state = reactive({
   saving: false
 })
 
-// 表单验证规则
 const rules = {
   nickName: [
     { required: true, message: '请输入昵称', trigger: 'blur' },
@@ -116,7 +108,7 @@ const rules = {
   ],
   confirmPassword: [
     {
-      validator: (rule: any, value: string, callback: Function) => {
+      validator: (_rule: any, value: string, callback: Function) => {
         if (state.form.password && value !== state.form.password) {
           callback(new Error('两次输入的密码不一致'))
         } else {
@@ -128,7 +120,6 @@ const rules = {
   ]
 }
 
-// 加载用户信息
 const loadUserInfo = async () => {
   try {
     const res = await userStore.getInfo()
@@ -141,7 +132,6 @@ const loadUserInfo = async () => {
   }
 }
 
-// 保存修改
 const handleSave = async () => {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
@@ -153,7 +143,6 @@ const handleSave = async () => {
       introduceSign: state.form.introduceSign
     }
 
-    // 如果填写了密码，添加密码参数
     if (state.form.password) {
       params.password = state.form.password
     }
@@ -161,7 +150,6 @@ const handleSave = async () => {
     await userStore.updateInfo(params)
     ElMessage.success('保存成功')
 
-    // 清空密码字段
     state.form.password = ''
     state.form.confirmPassword = ''
   } catch (error) {
@@ -171,7 +159,6 @@ const handleSave = async () => {
   }
 }
 
-// 退出登录
 const handleLogout = async () => {
   try {
     await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
@@ -180,18 +167,15 @@ const handleLogout = async () => {
       type: 'warning'
     })
 
-    // 清除登录信息
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
 
     ElMessage.success('退出成功')
     router.push('/login')
   } catch (error) {
-    // 用户取消
   }
 }
 
-// 返回上一页
 const goBack = () => {
   router.back()
 }

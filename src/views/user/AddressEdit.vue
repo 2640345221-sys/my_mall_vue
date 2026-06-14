@@ -1,15 +1,8 @@
 <template>
   <div class="address-edit-container">
-    <!-- 顶部导航 -->
-    <header class="edit-header">
-      <div class="header-left" @click="goBack">
-        <el-icon><ArrowLeft /></el-icon>
-      </div>
-      <div class="header-title">{{ state.type === 'add' ? '新增地址' : '编辑地址' }}</div>
-      <div class="header-right"></div>
-    </header>
+    <PageHeader :title="state.type === 'add' ? '新增地址' : '编辑地址'" @back="goBack" />
 
-    <!-- 地址表单 -->
+    
     <div class="edit-form">
       <el-form :model="state.form" label-position="top" :rules="rules" ref="formRef">
         <el-form-item label="收货人" prop="username">
@@ -24,7 +17,7 @@
           <el-cascader
             v-model="state.form.region"
             :options="state.regionOptions"
-            :props="{ value: 'name', label: 'name', children: 'children' }"
+            :props="{ value: 'id', label: 'name', children: 'children' }"
             placeholder="请选择省/市/区"
             style="width: 100%"
           />
@@ -48,7 +41,7 @@
       </el-form>
     </div>
 
-    <!-- 底部按钮 -->
+    
     <div class="bottom-bar">
       <el-button type="primary" size="large" @click="handleSave" :loading="state.saving">
         保存
@@ -70,31 +63,29 @@
 import { reactive, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
-import { useAddressStore, type UserAddress } from '@/stores/user/address'
+import { getById, addAddress, updateAddress, deleteById } from '@/api/user/address'
+import PageHeader from '@/components/PageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
-const addressStore = useAddressStore()
 const formRef = ref()
 
 const state = reactive({
   type: 'add' as 'add' | 'edit',
-  addressId:0 as number,
+  addressId: null as number | null,
   from: '',
   saving: false,
   deleting: false,
   form: {
     username: '',
     userPhone: '',
-    region: [] as string[],
+    region: [] as number[],
     detailAddress: '',
     isDefault: false
   },
   regionOptions: [] as Array<any>
 })
 
-// 表单验证规则
 const rules = {
   username: [
     { required: true, message: '请输入收货人姓名', trigger: 'blur' },
@@ -113,7 +104,6 @@ const rules = {
   ]
 }
 
-// 初始化
 const init = async () => {
   const { type, addressId, from } = route.query
   state.type = (type as 'add' | 'edit') || 'add'
@@ -123,70 +113,73 @@ const init = async () => {
     state.addressId = Number(addressId)
   }
   
-  // 加载地区数据
   loadRegionData()
   
-  // 如果是编辑模式，加载地址详情
   if (state.type === 'edit' && state.addressId) {
     await loadAddressDetail()
   }
 }
 
 const loadRegionData = () => {
-  // 这里简化处理，实际应该调用后端接口获取省市区数据
-  // 或者使用前端静态数据
   state.regionOptions = [
     {
+      id: 110000,
       name: '北京市',
       children: [
         {
+          id: 110100,
           name: '北京市',
           children: [
-            { name: '东城区' },
-            { name: '西城区' },
-            { name: '朝阳区' },
-            { name: '丰台区' },
-            { name: '海淀区' }
+            { id: 110101, name: '东城区' },
+            { id: 110102, name: '西城区' },
+            { id: 110105, name: '朝阳区' },
+            { id: 110106, name: '丰台区' },
+            { id: 110108, name: '海淀区' }
           ]
         }
       ]
     },
     {
+      id: 310000,
       name: '上海市',
       children: [
         {
+          id: 310100,
           name: '上海市',
           children: [
-            { name: '黄浦区' },
-            { name: '徐汇区' },
-            { name: '长宁区' },
-            { name: '静安区' },
-            { name: '虹口区' }
+            { id: 310101, name: '黄浦区' },
+            { id: 310104, name: '徐汇区' },
+            { id: 310105, name: '长宁区' },
+            { id: 310106, name: '静安区' },
+            { id: 310109, name: '虹口区' }
           ]
         }
       ]
     },
     {
+      id: 440000,
       name: '广东省',
       children: [
         {
+          id: 440100,
           name: '广州市',
           children: [
-            { name: '荔湾区' },
-            { name: '越秀区' },
-            { name: '海珠区' },
-            { name: '天河区' },
-            { name: '白云区' }
+            { id: 440103, name: '荔湾区' },
+            { id: 440104, name: '越秀区' },
+            { id: 440105, name: '海珠区' },
+            { id: 440106, name: '天河区' },
+            { id: 440111, name: '白云区' }
           ]
         },
         {
+          id: 440300,
           name: '深圳市',
           children: [
-            { name: '罗湖区' },
-            { name: '福田区' },
-            { name: '南山区' },
-            { name: '宝安区' },
-            { name: '龙岗区' }
+            { id: 440303, name: '罗湖区' },
+            { id: 440304, name: '福田区' },
+            { id: 440305, name: '南山区' },
+            { id: 440306, name: '宝安区' },
+            { id: 440307, name: '龙岗区' }
           ]
         }
       ]
@@ -194,58 +187,53 @@ const loadRegionData = () => {
   ]
 }
 
-// 加载地址详情
 const loadAddressDetail = async () => {
   try {
-    const res = await addressStore.getById(state.addressId!)
+    const res = await getById(state.addressId!)
     if (res) {
       state.form.username = res.username || ''
       state.form.userPhone = res.userPhone || ''
       state.form.detailAddress = res.detailAddress || ''
       state.form.isDefault = res.isDefault || false
       
-      if (res.province && res.city && res.region) {
-        state.form.region = [res.province, res.city, res.region]
-      }
     }
   } catch (error) {
     ElMessage.error('加载地址详情失败')
   }
 }
 
-// 返回上一页
 const goBack = () => {
   router.back()
 }
 
-// 保存地址
 const handleSave = async () => {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
   
   state.saving = true
   try {
-    const region = state.form.region
-    const province = region[0] || ''
-    const city = region[1] || ''
-    const regionName = region[2] || ''
+    const [provinceId, cityId, regionId] = state.form.region
+    const province = findRegionById(state.regionOptions, provinceId)
+    const city = findRegionById(province?.children || [], cityId)
+    const region = findRegionById(city?.children || [], regionId)
     
-    const params:UserAddress = {
+    const params = {
       username: state.form.username,
       userPhone: state.form.userPhone,
-      province: province,
-      city: city,
-      region: regionName,
+      province: province?.name || '',
+      city: city?.name || '',
+      region: region?.name || '',
       detailAddress: state.form.detailAddress,
-      isDefault: state.form.isDefault,
-      id:state.addressId,
-      userId:0
+      isDefault: state.form.isDefault
     }
     
     if (state.type === 'edit' && state.addressId) {
-      await addressStore.updateAddress(params)
+      await updateAddress({
+        ...params,
+        id: state.addressId
+      })
     } else {
-      await addressStore.addAddress(params)
+      await addAddress(params)
     }
     
     ElMessage.success('保存成功')
@@ -259,7 +247,6 @@ const handleSave = async () => {
   }
 }
 
-// 删除地址
 const handleDelete = async () => {
   if (!state.addressId) return
   
@@ -271,7 +258,7 @@ const handleDelete = async () => {
     })
     
     state.deleting = true
-    await addressStore.deleteAddress(state.addressId)
+    await deleteById(state.addressId)
     ElMessage.success('删除成功')
     setTimeout(() => {
       goBack()
@@ -283,6 +270,10 @@ const handleDelete = async () => {
   } finally {
     state.deleting = false
   }
+}
+
+const findRegionById = (list: Array<any>, id: number) => {
+  return list.find(item => item.id === id)
 }
 
 onMounted(() => {

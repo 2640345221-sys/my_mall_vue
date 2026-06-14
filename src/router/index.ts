@@ -6,7 +6,7 @@ const router =createRouter({
         // 用户端路由
         {
             path:'/',
-            redirect:'/login'
+            redirect:'/home'
         },
         {
             path:'/home',
@@ -21,7 +21,7 @@ const router =createRouter({
         {
             path:'/register',
             name:'Register',
-            component:()=>import('@/views/user/Register.vue')
+            component:()=>import('@/views/user/Login.vue')
         },
         {
             path:'/category',
@@ -79,14 +79,14 @@ const router =createRouter({
             component:()=>import('@/views/user/Setting.vue')
         },
         {
-            path:'/user/profile',
-            name:'Profile',
-            component:()=>import('@/views/user/Profile.vue')
-        },
-        {
             path:'/about',
             name:'About',
             component:()=>import('@/views/user/About.vue')
+        },
+        {
+            path:'/seckill',
+            name:'Seckill',
+            component:()=>import('@/views/user/Seckill.vue')
         },
         // 管理端路由
         {
@@ -96,32 +96,16 @@ const router =createRouter({
         },
         {
             path:'/admin',
-            redirect:'/admin/goods'
-        },
-        {
-            path:'/admin/goods',
-            name:'AdminGoods',
-            component:()=>import('@/views/admin/GoodsManage.vue')
-        },
-        {
-            path:'/admin/order',
-            name:'AdminOrder',
-            component:()=>import('@/views/admin/OrderManage.vue')
-        },
-        {
-            path:'/admin/user',
-            name:'AdminUser',
-            component:()=>import('@/views/admin/UserManage.vue')
-        },
-        {
-            path:'/admin/category',
-            name:'AdminCategory',
-            component:()=>import('@/views/admin/CategoryManage.vue')
-        },
-        {
-            path:'/admin/index-config',
-            name:'AdminIndexConfig',
-            component:()=>import('@/views/admin/IndexConfigManage.vue')
+            component:()=>import('@/layouts/AdminLayout.vue'),
+            children:[
+                { path:'', redirect:'/admin/goods' },
+                { path:'goods', name:'AdminGoods', component:()=>import('@/views/admin/GoodsManage.vue'), meta:{ title:'商品管理', activeMenu:'/admin/goods' } },
+                { path:'order', name:'AdminOrder', component:()=>import('@/views/admin/OrderManage.vue'), meta:{ title:'订单管理', activeMenu:'/admin/order' } },
+                { path:'user', name:'AdminUser', component:()=>import('@/views/admin/UserManage.vue'), meta:{ title:'用户管理', activeMenu:'/admin/user' } },
+                { path:'category', name:'AdminCategory', component:()=>import('@/views/admin/CategoryManage.vue'), meta:{ title:'分类管理', activeMenu:'/admin/category' } },
+                { path:'index-config', name:'AdminIndexConfig', component:()=>import('@/views/admin/IndexConfigManage.vue'), meta:{ title:'首页配置', activeMenu:'/admin/index-config' } },
+                { path:'seckill', name:'AdminSeckill', component:()=>import('@/views/admin/SeckillManage.vue'), meta:{ title:'秒杀管理', activeMenu:'/admin/seckill' } },
+            ]
         },
 
     ]
@@ -141,7 +125,7 @@ router.beforeEach((to, _from, next) => {
     }
     
     // 用户端某些页面需要登录
-    const needAuth = ['/cart', '/order', '/create-order', '/address', '/address-edit', '/user/setting']
+    const needAuth = ['/cart', '/order', '/create-order', '/address', '/address-edit', '/user', '/seckill']
     if (needAuth.some(path => to.path.startsWith(path)) && !token) {
         next('/login')
         return

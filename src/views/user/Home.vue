@@ -1,6 +1,6 @@
 <template>
   <div class="home-container">
-    <!-- 顶部搜索栏 -->
+    
     <header class="home-header" :class="{ 'active': state.headerScroll }">
       <div class="header-left" @click="goToCategory">
         <el-icon><Menu /></el-icon>
@@ -20,9 +20,16 @@
       </div>
     </header>
 
+    
+    <div class="seckill-banner" @click="$router.push('/seckill')">
+      <div class="seckill-banner-left">
+        <span class="seckill-icon">⚡</span>
+        <span class="seckill-title">限时秒杀</span>
+      </div>
+      <span class="seckill-arrow">抢购 &gt;</span>
+    </div>
 
-
-    <!-- 新品上线 -->
+    
     <div class="goods-section">
       <h3 class="section-title">新品上线</h3>
       <el-skeleton :rows="3" animated v-if="state.loading" />
@@ -37,13 +44,13 @@
           <div class="goods-info">
             <div class="goods-name">{{ item.name }}</div>
             <div class="goods-intro">{{ item.intro }}</div>
-            <div class="goods-price">¥{{ item.sellingPrice }}</div>
+            <div class="goods-price">¥{{ formatPrice(item.sellingPrice) }}</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 热门商品 -->
+    
     <div class="goods-section">
       <h3 class="section-title">热门商品</h3>
       <el-skeleton :rows="3" animated v-if="state.loading" />
@@ -58,13 +65,13 @@
           <div class="goods-info">
             <div class="goods-name">{{ item.name }}</div>
             <div class="goods-intro">{{ item.intro }}</div>
-            <div class="goods-price">¥{{ item.sellingPrice }}</div>
+            <div class="goods-price">¥{{ formatPrice(item.sellingPrice) }}</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 推荐商品 -->
+    
     <div class="goods-section" style="padding-bottom: 80px;">
       <h3 class="section-title">为你推荐</h3>
       <el-skeleton :rows="3" animated v-if="state.loading" />
@@ -79,70 +86,46 @@
           <div class="goods-info">
             <div class="goods-name">{{ item.name }}</div>
             <div class="goods-intro">{{ item.intro }}</div>
-            <div class="goods-price">¥{{ item.sellingPrice }}</div>
+            <div class="goods-price">¥{{ formatPrice(item.sellingPrice) }}</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 底部导航 -->
-    <nav class="bottom-nav">
-      <router-link to="/home" class="nav-item active">
-        <el-icon><HomeFilled /></el-icon>
-        <span>首页</span>
-      </router-link>
-      <router-link to="/category" class="nav-item">
-        <el-icon><Grid /></el-icon>
-        <span>分类</span>
-      </router-link>
-      <router-link to="/cart" class="nav-item">
-        <el-icon><ShoppingCart /></el-icon>
-        <span>购物车</span>
-      </router-link>
-      <router-link to="/user" class="nav-item">
-        <el-icon><User /></el-icon>
-        <span>我的</span>
-      </router-link>
-    </nav>
+    <BottomNav />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted, nextTick } from 'vue'
+import { reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Menu, Search, User, Goods, HomeFilled, Grid, ShoppingCart } from '@element-plus/icons-vue'
+import { Menu, Search, User } from '@element-plus/icons-vue'
+import { formatPrice } from '@/utils/format'
 import { useUserStore } from '@/stores/user/user'
-import { useIndexStore } from '@/stores/user/index'
-import { useCategoryStore } from '@/stores/user/category'
+import { getNewGoods, getPopularGoods, getRecommendGoods } from '@/api/user/index'
+import BottomNav from '@/components/BottomNav.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
-const indexStore = useIndexStore()
-const categoryStore = useCategoryStore()
 
 const state = reactive({
   headerScroll: false,
   loading: true,
-  categoryList: [] as Array<any>,
   newGoodsList: [] as Array<any>,
   popularGoodsList: [] as Array<any>,
   recommendGoodsList: [] as Array<any>
 })
 
-// 加载首页数据
 const loadHomeData = async () => {
   state.loading = true
   try {
-    // 并行加载所有数据
-    const [categoryRes, newRes, popularRes, recommendRes] = await Promise.all([
-      categoryStore.getCategory(),
-      indexStore.getNewGoods(),
-      indexStore.getPopularGoods(),
-      indexStore.getRecommendGoods()
+    const [newRes, popularRes, recommendRes] = await Promise.all([
+      getNewGoods(),
+      getPopularGoods(),
+      getRecommendGoods()
     ])
 
-    state.categoryList = categoryRes || []
     state.newGoodsList = newRes || []
     state.popularGoodsList = popularRes || []
     state.recommendGoodsList = recommendRes || []
@@ -154,38 +137,31 @@ const loadHomeData = async () => {
   }
 }
 
-// 跳转到搜索
 const goToSearch = () => {
   router.push('/goods-search')
 }
 
-// 跳转到分类
 const goToCategory = () => {
   router.push('/category')
 }
 
-// 跳转到指定分类
-const goToCategoryDetail = (categoryId?: number) => {
-  if (categoryId) {
-    router.push(`/goods-search?categoryId=${categoryId}`)
-  } else {
-    router.push('/category')
-  }
-}
-
-// 跳转到商品详情
 const goToDetail = (goodsId?: number) => {
   if (goodsId) {
     router.push(`/goods/${goodsId}`)
   }
 }
 
-// 监听滚动
+const handleScroll = () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+  state.headerScroll = scrollTop > 100
+}
+
 nextTick(() => {
-  window.addEventListener('scroll', () => {
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-    state.headerScroll = scrollTop > 100
-  })
+  window.addEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 
 onMounted(() => {
@@ -196,10 +172,9 @@ onMounted(() => {
 <style scoped>
 .home-container {
   min-height: 100vh;
-  background: #f5f5f5;
-  padding-top: 60px;
-  padding-bottom: 60px;
-  overflow-y: auto;
+  background: var(--bg-warm);
+  padding-top: 50px;
+  padding-bottom: 70px;
 }
 
 .home-header {
@@ -209,104 +184,110 @@ onMounted(() => {
   right: 0;
   display: flex;
   align-items: center;
-  padding: 10px 15px;
+  padding: 8px 16px;
   z-index: 1000;
+  transition: background 0.3s, box-shadow 0.3s;
 }
 
 .home-header.active {
-  background: #1baeae;
+  background: var(--ink);
+  box-shadow: 0 2px 20px rgba(26, 26, 46, 0.15);
 }
 
 .header-left {
-  color: #1baeae;
-  font-size: 20px;
+  color: var(--ink);
+  font-size: 22px;
+  transition: color 0.3s;
 }
 
 .home-header.active .header-left,
 .home-header.active .header-right {
-  color: white;
+  color: #fff;
+}
+
+.home-header.active .header-right a {
+  color: #fff;
 }
 
 .header-search {
   flex: 1;
   display: flex;
   align-items: center;
-  margin: 0 15px;
-  padding: 8px 15px;
-  background: white;
-  border-radius: 20px;
+  margin: 0 12px;
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: transform 0.2s;
+  cursor: pointer;
 }
+.header-search:active { transform: scale(0.98); }
 
 .app-name {
-  color: #1baeae;
+  color: var(--ink);
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 700;
   margin-right: 10px;
   padding-right: 10px;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid var(--border);
+  font-family: var(--font-display);
+  letter-spacing: 0.5px;
 }
 
 .search-box {
-  color: #999;
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 .header-right {
-  color: #1baeae;
+  color: var(--ink);
   font-size: 14px;
+  transition: color 0.3s;
 }
+.header-right a { color: var(--ink); text-decoration: none; font-weight: 500; }
 
-.carousel-section img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-}
-
-.category-section {
+.seckill-banner {
   display: flex;
-  flex-wrap: wrap;
-  padding: 15px;
-  background: white;
-  margin-top: 10px;
-}
-
-.category-item {
-  width: 20%;
-  display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
+  padding: 14px 18px;
+  margin: 12px 12px 0;
+  background: linear-gradient(135deg, var(--price-red), #ff6b6b);
+  border-radius: var(--radius-md);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(230, 57, 70, 0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
-
-.category-icon {
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0f0f0;
-  border-radius: 50%;
-  margin-bottom: 8px;
-  color: #1baeae;
+.seckill-banner:active { transform: scale(0.985); box-shadow: 0 2px 12px rgba(230,57,70,0.2); }
+.seckill-banner-left { display: flex; align-items: center; gap: 10px; }
+.seckill-icon { font-size: 22px; animation: pulse-icon 1.5s ease-in-out infinite; }
+@keyframes pulse-icon {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
 }
-
-.category-item span {
-  font-size: 12px;
-  color: #666;
-}
+.seckill-title { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
+.seckill-arrow { font-size: 13px; opacity: 0.85; font-weight: 500; }
 
 .goods-section {
-  margin-top: 10px;
-  background: white;
-  padding: 15px;
+  margin: 12px 12px 0;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
 }
 
 .section-title {
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 15px;
-  padding-left: 10px;
-  border-left: 4px solid #1baeae;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  padding-left: 12px;
+  border-left: 3px solid var(--amber);
+  letter-spacing: 0.3px;
+  font-family: var(--font-display);
 }
 
 .goods-list {
@@ -317,61 +298,50 @@ onMounted(() => {
 
 .goods-item {
   width: calc(50% - 5px);
-  background: #f9f9f9;
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
 }
+.goods-item:active { transform: scale(0.975); }
 
 .goods-item img {
   width: 100%;
-  height: 200px;  /* 增加高度，确保图片完全显示 */
-  object-fit: contain;  /* 保持图片比例，完全显示 */
+  display: block;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #f0ede8;
 }
 
 .goods-info {
-  padding: 10px;
+  padding: 10px 10px 12px;
 }
 
 .goods-name {
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.goods-intro {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.goods-intro {
-  font-size: 12px;
-  color: #999;
-  margin-top: 5px;
-}
-
 .goods-price {
   font-size: 16px;
-  color: #f44;
-  margin-top: 8px;
-}
-
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-around;
-  padding: 8px 0;
-  background: white;
-  border-top: 1px solid #eee;
-  z-index: 1000;
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: #666;
-  font-size: 12px;
-}
-
-.nav-item.active,
-.nav-item.router-link-active {
-  color: #1baeae;
+  font-weight: 700;
+  color: var(--price-red);
+  margin-top: 6px;
+  font-family: var(--font-display);
 }
 </style>

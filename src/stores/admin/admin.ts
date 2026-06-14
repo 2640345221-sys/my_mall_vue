@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import request from '@/utils/axios'
+import request from '@/api/request'
 
 export interface AdminLoginParams {
   username: string
