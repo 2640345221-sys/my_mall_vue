@@ -14,6 +14,7 @@ export interface User{
     introduceSign?:string
     token?:string
     locked?:boolean
+    createTime?:string
 }
 
 export interface UserDTO{
@@ -36,18 +37,6 @@ export const useUserStore=defineStore('user',()=>{
         return res
     }
 
-    const logout=async()=>{
-        await request.post('/user/logout')       
-        token.value = ''
-        userInfo.value = null
-        localStorage.removeItem('token') 
-    }
-
-    const register=async(loginDTO:LoginParams)=>{
-        const res=await request.post('/user/register',loginDTO)
-        return res
-    }
-
     const getInfo=async():Promise<User>=>{
         const res=await request.get('/user/info')
         userInfo.value=res
@@ -57,13 +46,15 @@ export const useUserStore=defineStore('user',()=>{
         const res=await request.put('/user/info', userDTO)
         return res
     }
+    const register=async(loginDTO:LoginParams)=>{
+        return request.post('/user/register', loginDTO)
+    }
     return {
         token,
         userInfo,
         doLogin,
-        logout,
-        register,
         getInfo,
-        updateInfo
+        updateInfo,
+        register
     }
 })

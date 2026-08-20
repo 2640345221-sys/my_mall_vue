@@ -4,7 +4,8 @@ import type { PageResult } from '../user/goods'
 export interface UserPageDTO {
   pageNumber: number
   pageSize: number
-  locked: number
+  locked?: number
+  keyword?: string
 }
 
 export function page(userPageDTO: UserPageDTO): Promise<PageResult> {

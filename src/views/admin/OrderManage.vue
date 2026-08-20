@@ -24,7 +24,11 @@
         
         <el-table :data="state.orderList" v-loading="state.loading" border>
           <el-table-column prop="orderNo" label="订单号" min-width="180" />
-          <el-table-column prop="userName" label="用户" min-width="120" />
+          <el-table-column label="用户" min-width="120">
+            <template #default="scope">
+              {{ scope.row.orderAddress?.username || '-' }}
+            </template>
+          </el-table-column>
           <el-table-column prop="totalPrice" label="订单金额" min-width="100">
             <template #default="scope">
               ¥{{ formatPrice(scope.row.totalPrice) }}
@@ -35,10 +39,10 @@
               {{ getPayTypeText(scope.row.payType) }}
             </template>
           </el-table-column>
-          <el-table-column prop="status" label="订单状态" min-width="100">
+          <el-table-column prop="orderStatus" label="订单状态" min-width="100">
             <template #default="scope">
-              <el-tag :type="getStatusType(scope.row.status)">
-                {{ getStatusText(scope.row.status) }}
+              <el-tag :type="getStatusType(scope.row.orderStatus)">
+                {{ getStatusText(scope.row.orderStatus) }}
               </el-tag>
             </template>
           </el-table-column>
@@ -49,15 +53,28 @@
                 详情
               </el-button>
               <el-button
-                v-if="scope.row.status === 1"
+                v-if="scope.row.orderStatus === 1"
+                type="warning"
+                link
+                @click="handleCheckDone(scope.row)"
+              >
+                配货
+              </el-button>
+              <el-button
+                v-if="scope.row.orderStatus === 2"
                 type="success"
                 link
-                @click="handleShip(scope.row)"
+                @click="handleCheckOut(scope.row)"
               >
                 发货
               </el-button>
-              <el-button type="danger" link @click="handleCancel(scope.row)">
-                取消
+              <el-button
+                v-if="scope.row.orderStatus === 0"
+                type="danger"
+                link
+                @click="handleClose(scope.row)"
+              >
+                关闭
               </el-button>
             </template>
           </el-table-column>
@@ -73,21 +90,21 @@
           <p><span>订单号：</span>{{ state.currentOrder.orderNo }}</p>
           <p><span>下单时间：</span>{{ state.currentOrder.createTime }}</p>
           <p><span>订单状态：</span>
-            <el-tag :type="getStatusType(state.currentOrder.status)">
-              {{ getStatusText(state.currentOrder.status) }}
+            <el-tag :type="getStatusType(state.currentOrder.orderStatus)">
+              {{ getStatusText(state.currentOrder.orderStatus) }}
             </el-tag>
           </p>
         </div>
         <div class="detail-section">
           <h4>收货信息</h4>
-          <p><span>收货人：</span>{{ state.currentOrder.userName }}</p>
-          <p><span>手机号：</span>{{ state.currentOrder.userPhone }}</p>
-          <p><span>收货地址：</span>{{ state.currentOrder.address }}</p>
+          <p><span>收货人：</span>{{ state.currentOrder.orderAddress?.username || '-' }}</p>
+          <p><span>手机号：</span>{{ state.currentOrder.orderAddress?.userPhone || '-' }}</p>
+          <p><span>收货地址：</span>{{ getAddressText(state.currentOrder.orderAddress) }}</p>
         </div>
         <div class="detail-section">
           <h4>商品信息</h4>
-          <el-table :data="state.currentOrder.items" border size="small">
-            <el-table-column prop="name" label="商品名称" />
+          <el-table :data="state.currentOrder.orderCartDTO || []" border size="small">
+            <el-table-column prop="goodsName" label="商品名称" />
             <el-table-column prop="price" label="单价" width="100">
               <template #default="scope">¥{{ formatPrice(scope.row.price) }}</template>
             </el-table-column>
@@ -105,30 +122,6 @@
       </div>
     </el-dialog>
 
-    
-    <el-dialog v-model="state.shipVisible" title="订单发货" width="500px">
-      <el-form :model="state.shipForm" label-width="100px">
-        <el-form-item label="快递公司">
-          <el-select v-model="state.shipForm.company" placeholder="选择快递公司" style="width: 100%">
-            <el-option label="顺丰速运" value="顺丰速运" />
-            <el-option label="中通快递" value="中通快递" />
-            <el-option label="圆通快递" value="圆通快递" />
-            <el-option label="申通快递" value="申通快递" />
-            <el-option label="韵达快递" value="韵达快递" />
-            <el-option label="EMS" value="EMS" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="快递单号">
-          <el-input v-model="state.shipForm.trackingNo" placeholder="请输入快递单号" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="state.shipVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleShipSubmit" :loading="state.shipLoading">
-          确认发货
-        </el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -136,7 +129,7 @@
 import { reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
-import { getPage, getOrderDetail, shipOrder, cancelByOrderNo } from '@/api/admin/order'
+import { getPage, getOrderDetail, checkDone, checkOut, close } from '@/api/admin/order'
 import { formatPrice } from '@/utils/format'
 import AdminPagination from '@/components/AdminPagination.vue'
 
@@ -149,34 +142,29 @@ const state = reactive({
   searchOrderNo: '',
   searchStatus: null as number | null,
   detailVisible: false,
-  currentOrder: null as any,
-  shipVisible: false,
-  shipLoading: false,
-  shipForm: {
-    orderNo: '',
-    company: '',
-    trackingNo: ''
-  }
+  currentOrder: null as any
 })
 
 const getStatusType = (status: number) => {
   const typeMap: Record<number, string> = {
     0: 'warning',
     1: 'primary',
-    2: 'success',
-    3: 'info',
-    4: 'danger'
+    2: 'primary',
+    3: 'success',
+    4: 'info'
   }
-  return typeMap[status] || 'info'
+  return typeMap[status] || 'danger'
 }
 
 const getStatusText = (status: number) => {
   const textMap: Record<number, string> = {
-    0: '待付款',
-    1: '待发货',
-    2: '待收货',
-    3: '已完成',
-    4: '已取消'
+    0: '待支付',
+    1: '已支付',
+    2: '配货完成',
+    3: '出库成功',
+    4: '交易成功',
+    [-1]: '已关闭',
+    [-3]: '已取消'
   }
   return textMap[status] || '未知'
 }
@@ -222,40 +210,46 @@ const handleDetail = async (row: any) => {
   }
 }
 
-const handleShip = (row: any) => {
-  state.shipForm.orderNo = row.orderNo
-  state.shipForm.company = ''
-  state.shipForm.trackingNo = ''
-  state.shipVisible = true
+const getAddressText = (addr: any) => {
+  if (!addr) return '-'
+  return `${addr.province || ''}${addr.city || ''}${addr.region || ''}${addr.detailAddress || ''}`
 }
 
-const handleShipSubmit = async () => {
-  if (!state.shipForm.company || !state.shipForm.trackingNo) {
-    ElMessage.warning('请填写完整的物流信息')
-    return
-  }
-  state.shipLoading = true
+const handleCheckDone = async (row: any) => {
   try {
-    await shipOrder(state.shipForm)
-    ElMessage.success('发货成功')
-    state.shipVisible = false
-    loadOrderList()
-  } catch (error) {
-    ElMessage.error('发货失败')
-  } finally {
-    state.shipLoading = false
-  }
-}
-
-const handleCancel = async (row: any) => {
-  try {
-    await ElMessageBox.confirm('确定要取消该订单吗？', '提示', { type: 'warning' })
-    await cancelByOrderNo(row.orderNo)
-    ElMessage.success('取消成功')
+    await ElMessageBox.confirm(`确认订单 ${row.orderNo} 配货完成？`, '提示', { type: 'warning' })
+    await checkDone([row.id])
+    ElMessage.success('配货成功')
     loadOrderList()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('取消失败')
+      ElMessage.error('配货失败')
+    }
+  }
+}
+
+const handleCheckOut = async (row: any) => {
+  try {
+    await ElMessageBox.confirm(`确认订单 ${row.orderNo} 出库发货？`, '提示', { type: 'warning' })
+    await checkOut([row.id])
+    ElMessage.success('发货成功')
+    loadOrderList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('发货失败')
+    }
+  }
+}
+
+const handleClose = async (row: any) => {
+  try {
+    await ElMessageBox.confirm(`确定要关闭订单 ${row.orderNo} 吗？关闭后库存会回补。`, '提示', { type: 'warning' })
+    await close([row.id])
+    ElMessage.success('关闭成功')
+    loadOrderList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('关闭失败')
     }
   }
 }

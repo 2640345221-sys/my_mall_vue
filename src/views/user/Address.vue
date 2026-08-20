@@ -1,6 +1,6 @@
 <template>
   <div class="address-container">
-    <PageHeader title="地址管理" @back="goBack" />
+    <PageHeader title="地址管理" :topOffset="44" @back="goBack" />
 
     
     <div class="address-list" v-if="state.list.length > 0">
@@ -47,6 +47,8 @@
         新建地址
       </el-button>
     </div>
+
+    <BottomNav />
   </div>
 </template>
 
@@ -57,6 +59,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, Delete, Plus } from '@element-plus/icons-vue'
 import { getAllAddress, deleteById } from '@/api/user/address'
 import PageHeader from '@/components/PageHeader.vue'
+import BottomNav from '@/components/BottomNav.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -158,6 +161,7 @@ onMounted(() => {
 .address-container {
   min-height: 100vh;
   background: #f5f5f5;
+  padding-top: 44px;
   padding-bottom: 80px;
 }
 
@@ -185,7 +189,7 @@ onMounted(() => {
 }
 
 .address-list {
-  padding-top: 50px;
+  padding-top: 0;
 }
 
 .address-item {

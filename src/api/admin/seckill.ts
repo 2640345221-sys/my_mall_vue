@@ -8,10 +8,6 @@ export function getPage(params: Record<string, any>) {
   return request.get(`/admin/seckill/page?${searchParams.toString()}`)
 }
 
-export function getById(id: number) {
-  return request.get(`/admin/seckill/${id}`)
-}
-
 export function save(data: Record<string, any>) {
   return request.post('/admin/seckill', data)
 }

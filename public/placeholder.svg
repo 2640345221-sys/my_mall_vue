@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" role="img" aria-label="暂无商品图片">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e6ecf3"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#bg)"/>
+  <g transform="translate(210 168)">
+    <rect x="0" y="22" width="180" height="140" rx="14" fill="none" stroke="#b6c0cc" stroke-width="7"/>
+    <circle cx="136" cy="64" r="20" fill="#cdd6df"/>
+    <path d="M0 140 L54 96 L96 126 L136 92 L180 118 L180 162 L0 162 Z" fill="#cdd6df"/>
+  </g>
+  <text x="300" y="402" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="32" fill="#9aa5b1">暂无商品图片</text>
+  <text x="300" y="446" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="20" fill="#c0c7d0" letter-spacing="2">No Image</text>
+</svg>

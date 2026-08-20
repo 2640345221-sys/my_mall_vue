@@ -1,20 +1,32 @@
 <template>
   <div class="goods-detail">
-    <PageHeader title="商品详情" @back="goBack" />
+    <PageHeader title="商品详情" :topOffset="44" @back="goBack" />
 
     
     <div class="detail-content" v-if="state.goods.id">
-      
       <div class="goods-info">
+        <h1 class="goods-name">{{ state.goods.name }}</h1>
         <div class="goods-price">
-          <span class="price-symbol">¥</span>
-          <span class="price-value">{{ state.goods.sellingPrice }}</span>
+          <span class="price-value">{{ formatPrice(state.goods.sellingPrice) }}</span>
           <span class="original-price" v-if="state.goods.originalPrice">
             ¥{{ formatPrice(state.goods.originalPrice) }}
           </span>
         </div>
-        <h1 class="goods-name">{{ state.goods.name }}</h1>
         <p class="goods-intro">{{ state.goods.intro }}</p>
+
+        <div class="category-row">
+          <el-tag
+            v-if="state.categoryName"
+            type="warning"
+            effect="plain"
+            size="small"
+            class="category-tag"
+            @click="goToCategory"
+          >
+            {{ state.categoryName }}
+          </el-tag>
+        </div>
+
         <div class="goods-tags">
           <el-tag v-if="state.goods.tag" type="danger" size="small">{{ state.goods.tag }}</el-tag>
           <el-tag type="info" size="small">免邮费</el-tag>
@@ -22,32 +34,20 @@
         </div>
       </div>
 
-      
+      <img :src="state.goods.coverImg" :alt="state.goods.name" class="goods-cover" />
+
+
       <div class="goods-detail-content">
-        <div class="detail-tabs">
-          <div class="tab-item active">商品详情</div>
-          <div class="tab-item">规格参数</div>
-        </div>
+        <div class="detail-title">商品详情</div>
         <div class="detail-html" v-html="state.goods.detailContent"></div>
       </div>
     </div>
 
-    
+
     <el-skeleton :rows="10" animated v-else />
 
-    
+
     <div class="action-bar" v-if="state.goods.id">
-      <div class="action-left">
-        <div class="action-item" @click="goToHome">
-          <el-icon><HomeFilled /></el-icon>
-          <span>首页</span>
-        </div>
-        <div class="action-item" @click="goToCart">
-          <el-icon><ShoppingCart /></el-icon>
-          <span>购物车</span>
-          <el-badge v-if="state.cartCount > 0" :value="state.cartCount" class="cart-badge" />
-        </div>
-      </div>
       <div class="action-right">
         <el-button type="warning" @click="handleAddCart" :loading="state.adding">
           加入购物车
@@ -57,6 +57,8 @@
         </el-button>
       </div>
     </div>
+
+    <BottomNav />
   </div>
 </template>
 
@@ -64,10 +66,11 @@
 import { reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { HomeFilled, ShoppingCart } from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
+import BottomNav from '@/components/BottomNav.vue'
 import { getGoodsById } from '@/api/user/goods'
 import { addItem } from '@/api/user/cart'
+import { getCategory, type IndexCategoryVO } from '@/api/user/category'
 import { formatPrice } from '@/utils/format'
 
 const route = useRoute()
@@ -77,7 +80,7 @@ const state = reactive({
   goods: {} as any,
   loading: false,
   adding: false,
-  cartCount: 0
+  categoryName: ''
 })
 
 
@@ -92,6 +95,7 @@ const loadGoodsDetail = async () => {
   try {
     const res = await getGoodsById(Number(id))
     state.goods = res || {}
+    await loadCategoryName()
   } catch (error) {
     ElMessage.error('加载商品详情失败')
     console.error(error)
@@ -100,16 +104,32 @@ const loadGoodsDetail = async () => {
   }
 }
 
+const findCategoryName = (tree: IndexCategoryVO[], id: number): string => {
+  for (const c of tree) {
+    if (c.id === id) return c.name
+    for (const sub of c.children || []) {
+      if (sub.id === id) return `${c.name} > ${sub.name}`
+    }
+  }
+  return ''
+}
+
+const loadCategoryName = async () => {
+  const cid = state.goods.categoryId
+  if (!cid) return
+  try {
+    const tree = await getCategory()
+    state.categoryName = findCategoryName(tree, cid)
+  } catch { /* 分类名拿不到不影响详情展示 */ }
+}
+
+const goToCategory = () => {
+  if (!state.goods.categoryId) return
+  router.push({ path: '/goods-search', query: { categoryId: state.goods.categoryId } })
+}
+
 const goBack = () => {
   router.back()
-}
-
-const goToHome = () => {
-  router.push('/home')
-}
-
-const goToCart = () => {
-  router.push('/cart')
 }
 
 const handleAddCart = async () => {
@@ -122,7 +142,6 @@ const handleAddCart = async () => {
       goodsCount: 1
     })
     ElMessage.success('加入购物车成功')
-    await loadCartCount()
   } catch (error) {
     ElMessage.error('加入购物车失败')
   } finally {
@@ -144,13 +163,8 @@ const handleBuyNow = async () => {
   }
 }
 
-const loadCartCount = async () => {
-   state.cartCount =  0;
-}
-
 onMounted(() => {
   loadGoodsDetail()
-  loadCartCount()
 })
 </script>
 
@@ -158,25 +172,29 @@ onMounted(() => {
 .goods-detail {
   min-height: 100vh;
   background: var(--bg-warm);
+  padding-top: 44px;
   padding-bottom: 70px;
 }
 
 .detail-content { padding-top: 0; }
 
 .goods-cover {
-  width: 100%;
+  display: block;
+  width: 72%;
+  max-width: 340px;
+  margin: 20px auto;
   aspect-ratio: 1;
   object-fit: cover;
   background: #e8e4de;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .goods-info {
   background: var(--card);
   padding: 20px 16px;
-  margin: -12px 12px 10px;
+  margin: 12px;
   border-radius: var(--radius-lg);
-  position: relative;
-  z-index: 1;
   box-shadow: var(--shadow-md);
 }
 
@@ -187,12 +205,12 @@ onMounted(() => {
 }
 
 .price-value {
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 700;
   color: var(--price-red);
   font-family: var(--font-display);
 }
-.price-value::before { content: '¥'; font-size: 18px; margin-right: 2px; }
+.price-value::before { content: '¥'; font-size: 20px; margin-right: 2px; }
 
 .original-price {
   font-size: 13px;
@@ -202,10 +220,10 @@ onMounted(() => {
 }
 
 .goods-name {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 6px;
+  margin-bottom: 10px;
   line-height: 1.4;
   font-family: var(--font-display);
 }
@@ -216,6 +234,16 @@ onMounted(() => {
   margin-bottom: 12px;
 }
 
+.category-row {
+  margin-bottom: 10px;
+}
+
+.category-tag {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.category-tag:hover { opacity: 0.75; }
+
 .goods-detail-content {
   background: var(--card);
   margin: 0 12px;
@@ -224,22 +252,14 @@ onMounted(() => {
   box-shadow: var(--shadow-sm);
 }
 
-.detail-tabs {
-  display: flex;
-  border-bottom: 2px solid var(--border);
-  margin-bottom: 16px;
-}
-
-.tab-item {
-  padding: 10px 24px;
-  font-size: 14px;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-.tab-item.active {
+.detail-title {
+  font-size: 16px;
+  font-weight: 700;
   color: var(--ink);
-  border-bottom: 2px solid var(--amber);
-  margin-bottom: -2px;
+  margin-bottom: 12px;
+  padding-left: 10px;
+  border-left: 3px solid var(--amber);
+  font-family: var(--font-display);
 }
 
 .action-bar {
@@ -255,28 +275,6 @@ onMounted(() => {
   border-top: 1px solid var(--border);
   z-index: 1000;
   box-shadow: 0 -2px 16px rgba(0,0,0,0.04);
-}
-
-.action-left {
-  display: flex;
-  gap: 24px;
-  margin-right: 16px;
-}
-
-.action-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  color: var(--text-muted);
-  font-size: 20px;
-}
-.action-item span { font-size: 11px; margin-top: 2px; }
-
-.cart-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
 }
 
 .action-right {

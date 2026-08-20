@@ -1,13 +1,13 @@
 <template>
-  <div class="register-container">
-    <div class="register-box">
+  <div class="login-container">
+    <div class="login-box">
       <h2 class="title" style="color: #409EFF;">用户注册</h2>
-      
-      <el-form 
-        :model="form" 
+
+      <el-form
+        :model="form"
         :rules="rules"
         ref="formRef"
-        class="register-form"
+        class="login-form"
         @keyup.enter="handleRegister"
       >
         <el-form-item prop="username">
@@ -18,7 +18,7 @@
             :prefix-icon="User"
           />
         </el-form-item>
-        
+
         <el-form-item prop="password">
           <el-input
             v-model="form.password"
@@ -29,23 +29,23 @@
             show-password
           />
         </el-form-item>
-        
+
         <el-form-item prop="confirmPassword">
           <el-input
             v-model="form.confirmPassword"
             type="password"
-            placeholder="请确认密码"
+            placeholder="请再次输入密码"
             size="large"
             :prefix-icon="Lock"
             show-password
           />
         </el-form-item>
-        
+
         <el-form-item>
-          <el-button 
-            type="primary" 
+          <el-button
+            type="primary"
             size="large"
-            class="register-btn"
+            class="login-btn"
             :loading="loading"
             @click="handleRegister"
           >
@@ -53,11 +53,14 @@
           </el-button>
         </el-form-item>
       </el-form>
-      
-      <div class="register-links">
+
+      <div class="login-links">
         <el-link type="primary" @click="goToLogin">已有账号？去登录</el-link>
+        <el-link type="primary" @click="goToAdminLogin">管理员登录</el-link>
       </div>
     </div>
+
+    <BottomNav />
   </div>
 </template>
 
@@ -67,6 +70,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user/user'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
+import BottomNav from '@/components/BottomNav.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -80,27 +84,26 @@ const form = reactive({
 
 const loading = ref(false)
 
-const validateConfirmPassword = (_rule: any, value: any, callback: any) => {
-  if (value === '') {
-    callback(new Error('请确认密码'))
-  } else if (value !== form.password) {
-    callback(new Error('两次输入密码不一致'))
-  } else {
-    callback()
-  }
-}
-
 const rules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
+    { required: true, message: '请输入用户名', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度至少6位', trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, validator: validateConfirmPassword, trigger: 'blur' }
+    { required: true, message: '请再次输入密码', trigger: 'blur' },
+    {
+      validator: (_rule: any, value: string, callback: any) => {
+        if (value !== form.password) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
   ]
 }
 
@@ -114,11 +117,10 @@ const handleRegister = async () => {
       username: form.username,
       password: form.password
     })
-    ElMessage.success('注册成功')
-    router.push('/login')
+    ElMessage.success('注册成功，请登录')
+    router.replace('/login')
   } catch (error) {
-    console.error('注册失败:', error)
-    ElMessage.error('注册失败，请稍后重试')
+    console.error(error)
   } finally {
     loading.value = false
   }
@@ -127,46 +129,40 @@ const handleRegister = async () => {
 const goToLogin = () => {
   router.push('/login')
 }
+
+const goToAdminLogin = () => {
+  router.push('/admin/login')
+}
 </script>
 
 <style scoped>
-.register-container {
+.login-container {
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f5f5f5;
 }
 
-.register-box {
+.login-box {
   width: 400px;
   padding: 40px;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .title {
   text-align: center;
   margin-bottom: 30px;
   font-size: 24px;
-  font-weight: bold;
 }
 
-.register-form {
-  margin-bottom: 20px;
-}
-
-.register-btn {
+.login-btn {
   width: 100%;
-  margin-top: 10px;
 }
 
-.register-links {
-  text-align: center;
-}
-
-.register-links .el-link {
-  margin: 0 10px;
+.login-links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
 }
 </style>

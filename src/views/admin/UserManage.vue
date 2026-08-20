@@ -4,10 +4,15 @@
         <div class="search-bar">
           <el-input
             v-model="state.searchKeyword"
-            placeholder="请输入用户名/手机号"
+            placeholder="请输入用户名/昵称"
             style="width: 250px"
             clearable
+            @keyup.enter="handleSearch"
           />
+          <el-select v-model="state.searchStatus" placeholder="账号状态" clearable style="width: 140px">
+            <el-option label="正常" :value="0" />
+            <el-option label="禁用" :value="1" />
+          </el-select>
           <el-button type="primary" @click="handleSearch">
             <el-icon><Search /></el-icon>
             搜索
@@ -55,6 +60,7 @@ const state = reactive({
   pageSize: 10,
   total: 0,
   searchKeyword: '',
+  searchStatus: null as number | null,
 })
 
 const loadUserList = async () => {
@@ -63,7 +69,8 @@ const loadUserList = async () => {
     const res = await page({
       pageNumber: state.page,
       pageSize: state.pageSize,
-      locked: 0
+      locked: state.searchStatus ?? undefined,
+      keyword: state.searchKeyword || undefined
     })
     state.userList = res.records || []
     state.total = res.total || 0

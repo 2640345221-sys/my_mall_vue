@@ -1,5 +1,5 @@
 <template>
-  <header class="page-header">
+  <header class="page-header" :style="{ top: `${topOffset}px` }">
     <div
       class="header-left"
       :class="{ clickable: showBack }"
@@ -17,10 +17,13 @@
 <script setup lang="ts">
 import { ArrowLeft } from '@element-plus/icons-vue'
 
-defineProps<{
+withDefaults(defineProps<{
   title: string
   showBack?: boolean
-}>()
+  topOffset?: number
+}>(), {
+  topOffset: 0
+})
 
 defineEmits<{
   back: []

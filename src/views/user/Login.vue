@@ -46,6 +46,8 @@
         <el-link type="primary" @click="goToAdminLogin">管理员登录</el-link>
       </div>
     </div>
+
+    <BottomNav />
   </div>
 </template>
 <script setup lang="ts">
@@ -54,6 +56,7 @@ import {useRouter} from 'vue-router'
 import {useUserStore} from '@/stores/user/user'
 import {ElMessage} from 'element-plus'
 import {User,Lock} from '@element-plus/icons-vue'
+import BottomNav from '@/components/BottomNav.vue'
 
 const router=useRouter()
 const userStore=useUserStore()

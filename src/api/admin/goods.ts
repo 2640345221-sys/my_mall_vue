@@ -12,10 +12,6 @@ export function insertGoods(goods: Goods) {
   return request.post('/admin/goods', goods)
 }
 
-export function getGoodsById(id: number): Promise<Goods> {
-  return request.get(`/admin/goods/info/${id}`)
-}
-
 export function pageGoods(goodsPageDTO: GoodsPageDTO): Promise<PageResult> {
   return request.get('/admin/goods/page', { params: goodsPageDTO })
 }

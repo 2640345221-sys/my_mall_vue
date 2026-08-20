@@ -42,10 +42,10 @@
         <el-form-item label="分类名称" prop="name">
           <el-input v-model="state.form.name" placeholder="请输入分类名称" />
         </el-form-item>
-        <el-form-item label="上级分类" prop="parentId">
-          <el-select v-model="state.form.parentId" placeholder="请选择二级分类" style="width: 100%">
+        <el-form-item label="上级分类" prop="parentId" v-if="state.form.level > 1">
+          <el-select v-model="state.form.parentId" :placeholder="state.form.level === 3 ? '请选择二级分类' : '请选择一级分类'" style="width: 100%">
             <el-option
-              v-for="item in secondLevelCategories"
+              v-for="item in parentCategoryOptions"
               :key="item.id"
               :label="item.name"
               :value="item.id"
@@ -84,7 +84,8 @@ const state = reactive({
     id: null as number | null,
     name: '',
     parentId: 0,
-    rank: 0
+    rank: 0,
+    level: 3
   }
 })
 
@@ -92,9 +93,17 @@ const secondLevelCategories = computed(() => {
   return state.categoryList.filter(item => item.level === 2)
 })
 
+const firstLevelCategories = computed(() => {
+  return state.categoryList.filter(item => item.level === 1)
+})
+
+const parentCategoryOptions = computed(() => {
+  return state.form.level === 2 ? firstLevelCategories.value : secondLevelCategories.value
+})
+
 const formRules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
-  parentId: [{ required: true, message: '请选择二级分类', trigger: 'change' }],
+  parentId: [{ required: true, message: '请选择上级分类', trigger: 'change' }],
   rank: [{ required: true, message: '请输入优先值', trigger: 'blur' }]
 }
 
@@ -123,7 +132,8 @@ const handleAdd = () => {
     id: null,
     name: '',
     parentId: firstSecondLevel ? firstSecondLevel.id : 0,
-    rank: 0
+    rank: 0,
+    level: 3
   }
   state.dialogVisible = true
 }
@@ -134,7 +144,8 @@ const handleEdit = (row: any) => {
     id: row.id,
     name: row.name,
     parentId: row.parentId || 0,
-    rank: row.rank || 0
+    rank: row.rank || 0,
+    level: row.level || 3
   }
   state.dialogVisible = true
 }
@@ -146,8 +157,7 @@ const handleSubmit = async () => {
   state.submitting = true
   try {
     const params: any = {
-      ...state.form,
-      level: 3
+      ...state.form
     }
 
     if (state.dialogType === 'add') {

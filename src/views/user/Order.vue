@@ -1,6 +1,6 @@
 <template>
   <div class="order-container">
-    <PageHeader title="我的订单" @back="goBack" />
+    <PageHeader title="我的订单" :topOffset="44" @back="goBack" />
 
     
     <div class="order-tabs">
@@ -17,9 +17,14 @@
 
     
     <div class="order-list" v-loading="state.loading">
+      <div class="search-box">
+        <el-icon><Search /></el-icon>
+        <input v-model="state.keyword" placeholder="搜索订单号或商品" />
+      </div>
+
       <div
         class="order-item"
-        v-for="order in state.list"
+        v-for="order in filteredList"
         :key="order.orderNo"
         @click="goToDetail(order.orderNo)"
       >
@@ -104,16 +109,20 @@
       </el-button>
       <span v-else class="no-more">没有更多了</span>
     </div>
+
+    <BottomNav />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue'
+import { reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
 import { getOrderPage, payOrder, confirmOrder, cancelOrder } from '@/api/user/order'
 import { formatPrice } from '@/utils/format'
 import PageHeader from '@/components/PageHeader.vue'
+import BottomNav from '@/components/BottomNav.vue'
 
 const router = useRouter()
 
@@ -124,17 +133,28 @@ const tabs = [
   { label: '配货完成', value: '2' },
   { label: '出库成功', value: '3' },
   { label: '交易成功', value: '4' },
-  { label: '已关闭', value: '-1' }
+  { label: '已关闭', value: '-99' }
 ]
 
 const state = reactive({
   status: '',
+  keyword: '',
   list: [] as Array<any>,
   loading: false,
   finished: false,
   page: 1,
   pageSize: 10,
   total: 0
+})
+
+const filteredList = computed(() => {
+  const kw = state.keyword.trim().toLowerCase()
+  if (!kw) return state.list
+  return state.list.filter(order => {
+    if ((order.orderNo || '').toLowerCase().includes(kw)) return true
+    const items = order.orderCartDTO || []
+    return items.some((item: any) => (item.goodsName || '').toLowerCase().includes(kw))
+  })
 })
 
 const getStatusText = (status: number) => {
@@ -300,7 +320,7 @@ onMounted(() => {
 
 .order-tabs {
   position: fixed;
-  top: 44px;
+  top: 88px;
   left: 0;
   right: 0;
   display: flex;
@@ -322,8 +342,11 @@ onMounted(() => {
   border-bottom: 2px solid #1baeae;
 }
 
+.search-box { display: flex; align-items: center; gap: 8px; margin: 10px 12px; padding: 8px 12px; background: white; border-radius: 18px; color: #999; }
+.search-box input { flex: 1; border: none; outline: none; background: transparent; font-size: 14px; color: #333; }
+
 .order-list {
-  padding-top: 100px;
+  padding-top: 144px;
 }
 
 .order-item {
@@ -411,7 +434,7 @@ onMounted(() => {
 }
 
 .empty-state {
-  padding-top: 100px;
+  padding-top: 144px;
 }
 
 .load-more {

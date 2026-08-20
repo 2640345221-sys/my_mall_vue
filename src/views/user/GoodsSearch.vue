@@ -108,6 +108,8 @@
         </el-tag>
       </div>
     </div>
+
+    <BottomNav />
   </div>
 </template>
 
@@ -118,6 +120,7 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, Search, CircleClose, ArrowUp, ArrowDown, Delete } from '@element-plus/icons-vue'
 import { search } from '@/api/user/goods'
 import { formatPrice } from '@/utils/format'
+import BottomNav from '@/components/BottomNav.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -281,7 +284,7 @@ onMounted(() => {
 
 .search-header {
   position: fixed;
-  top: 0;
+  top: 44px;
   left: 0;
   right: 0;
   display: flex;
@@ -322,7 +325,7 @@ onMounted(() => {
 
 .sort-tabs {
   position: fixed;
-  top: 50px;
+  top: 94px;
   left: 0;
   right: 0;
   display: flex;
@@ -344,7 +347,7 @@ onMounted(() => {
 }
 
 .product-list {
-  padding-top: 100px;
+  padding-top: 144px;
 }
 
 .product-item {
@@ -381,12 +384,12 @@ onMounted(() => {
 }
 
 .empty-state {
-  padding-top: 100px;
+  padding-top: 144px;
 }
 
 .search-tip {
   text-align: center;
-  padding-top: 150px;
+  padding-top: 194px;
   color: #999;
 }
 

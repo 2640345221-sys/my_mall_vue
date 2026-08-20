@@ -1,12 +1,21 @@
 <template>
   <div class="category-container">
-    <PageHeader title="商品分类" @back="goHome">
+    <PageHeader title="商品分类" :topOffset="44" @back="goHome">
       <template #right>
         <el-icon><MoreFilled /></el-icon>
       </template>
     </PageHeader>
 
-    
+    <div class="search-box">
+      <el-icon><Search /></el-icon>
+      <input
+        v-model="state.searchKeyword"
+        placeholder="搜索商品"
+        @keyup.enter="goToSearch"
+      />
+    </div>
+
+
     <div class="category-content" ref="categoryContentRef">
       
       <div class="category-nav">
@@ -76,7 +85,7 @@
 import { reactive, onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { MoreFilled, Goods } from '@element-plus/icons-vue'
+import { MoreFilled, Goods, Search } from '@element-plus/icons-vue'
 import { getCategory } from '@/api/user/category'
 import PageHeader from '@/components/PageHeader.vue'
 import BottomNav from '@/components/BottomNav.vue'
@@ -87,7 +96,8 @@ const categoryContentRef = ref<HTMLElement | null>(null)
 const state = reactive({
   categoryList: [] as Array<any>,
   currentId: 0,
-  loading: false
+  loading: false,
+  searchKeyword: ''
 })
 
 const currentCategory = computed(() => {
@@ -119,6 +129,15 @@ const goHome = () => {
   router.push('/home')
 }
 
+const goToSearch = () => {
+  const kw = state.searchKeyword.trim()
+  if (kw) {
+    router.push({ path: '/goods-search', query: { keyword: kw } })
+  } else {
+    router.push('/goods-search')
+  }
+}
+
 
 const goToGoodsList = (categoryId?: number) => {
   if (categoryId) {
@@ -130,7 +149,7 @@ onMounted(() => {
   loadCategoryData()
   if (categoryContentRef.value) {
     const screenHeight = document.documentElement.clientHeight
-    categoryContentRef.value.style.height = screenHeight - 100 + 'px'
+    categoryContentRef.value.style.height = screenHeight - 134 + 'px'
   }
 })
 </script>
@@ -139,7 +158,8 @@ onMounted(() => {
 .category-container {
   min-height: 100vh;
   background: #f5f5f5;
-  padding-bottom: 60px;
+  padding-top: 44px;
+  padding-bottom: 0;
 }
 
 .category-header {
@@ -183,11 +203,32 @@ onMounted(() => {
   font-size: 14px;
 }
 
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 12px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 18px;
+  color: #999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: #333;
+}
+
 .category-content {
   display: flex;
-  margin-top: 60px;  /* 增加margin，确保完全避开搜索栏 */
-  height: calc(100vh - 120px);  /* 设置固定高度，确保内容完全显示 */
-  overflow-y: auto;  /* 允许垂直滚动 */
+  margin-top: 0;
+  height: calc(100vh - 134px);  /* 顶部导航 44px + 标题栏 44px + 搜索框 46px */
+  overflow-y: auto;
 }
 
 .category-nav {
@@ -261,31 +302,5 @@ onMounted(() => {
   font-size: 12px;
   color: #666;
   text-align: center;
-}
-
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-around;
-  padding: 8px 0;
-  background: white;
-  border-top: 1px solid #eee;
-  z-index: 1000;
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: #666;
-  font-size: 12px;
-}
-
-.nav-item.active,
-.nav-item.router-link-active {
-  color: #1baeae;
 }
 </style>

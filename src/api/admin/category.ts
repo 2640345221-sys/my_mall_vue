@@ -21,10 +21,6 @@ export function updateCategory(categoryDTO: CategoryDTO) {
   return request.put('/admin/category', categoryDTO)
 }
 
-export function getCategoryById(id: number): Promise<GoodSCategory> {
-  return request.get(`/admin/category/${id}`)
-}
-
 export function getAll(): Promise<GoodSCategory[]> {
   return request.get('/admin/category')
 }

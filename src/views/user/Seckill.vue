@@ -1,9 +1,14 @@
 <template>
   <div class="seckill-container">
-    <PageHeader title="限时秒杀" @back="$router.back()" />
+    <PageHeader title="限时秒杀" :topOffset="44" @back="$router.back()" />
 
-    <div class="seckill-list" v-if="state.list.length > 0">
-      <div class="seckill-item" v-for="item in state.list" :key="item.id">
+    <div class="search-box">
+      <el-icon><Search /></el-icon>
+      <input v-model="state.keyword" placeholder="搜索秒杀商品" />
+    </div>
+
+    <div class="seckill-list" v-if="filteredList.length > 0">
+      <div class="seckill-item" v-for="item in filteredList" :key="item.id">
         <img :src="item.coverImg" :alt="item.goodsName" />
         <div class="seckill-info">
           <div class="goods-name">{{ item.goodsName }}</div>
@@ -59,15 +64,19 @@
         <el-button @click="state.resultVisible = false" v-if="state.resultStatus">关闭</el-button>
       </template>
     </el-dialog>
+
+    <BottomNav />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, onUnmounted } from 'vue'
+import { reactive, ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Loading } from '@element-plus/icons-vue'
+import { Loading, Search } from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { getSeckillList, submitSeckill as submitSeckillApi, getResult } from '@/api/user/seckill'
+import BottomNav from '@/components/BottomNav.vue'
+import { getSeckillGoodsList, submitSeckill as submitSeckillApi, getResult } from '@/api/user/seckill'
+import { getDefault } from '@/api/user/address'
 import { useUserStore } from '@/stores/user/user'
 import { formatPrice } from '@/utils/format'
 
@@ -77,6 +86,7 @@ const pollingTimer = ref<ReturnType<typeof setInterval> | null>(null)
 
 const state = reactive({
   list: [] as any[],
+  keyword: '',
   buyVisible: false,
   currentItem: null as any,
   buyCount: 1,
@@ -86,10 +96,16 @@ const state = reactive({
   resultMsg: ''
 })
 
+const filteredList = computed(() => {
+  const kw = state.keyword.trim().toLowerCase()
+  if (!kw) return state.list
+  return state.list.filter(item => (item.goodsName || '').toLowerCase().includes(kw))
+})
+
 const loadList = async () => {
   try {
-    const res = await getSeckillList()
-    state.list = res.records || []
+    const res = await getSeckillGoodsList()
+    state.list = res || []
   } catch { ElMessage.error('加载秒杀列表失败') }
 }
 
@@ -106,10 +122,16 @@ const handleBuy = (item: any) => {
 const submitSeckill = async () => {
   state.submitting = true
   try {
+    // 获取默认收货地址，没有则提示先设置
+    const address = await getDefault()
+    if (!address || !address.id) {
+      ElMessage.warning('请先设置收货地址')
+      return
+    }
     await submitSeckillApi({
       seckillGoodsId: state.currentItem.id,
       count: state.buyCount,
-      addressId: 0
+      addressId: address.id
     })
     state.buyVisible = false
     state.resultVisible = true
@@ -135,7 +157,8 @@ const startPolling = (seckillGoodsId: number) => {
         clearPolling()
       }
     } catch { /* retry */ }
-    if (count > 12) {
+    // 80 次 × 1.5 秒 = 2 分钟，超时停止轮询
+    if (count > 80) {
       state.resultStatus = 'fail'
       state.resultMsg = '秒杀超时，请稍后查看订单'
       clearPolling()
@@ -152,9 +175,11 @@ onUnmounted(() => { clearPolling() })
 </script>
 
 <style scoped>
-.seckill-container { min-height: 100vh; background: #f5f5f5; }
+.seckill-container { min-height: 100vh; background: #f5f5f5; padding-top: 44px; }
 .page-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #ff4444; color: white; font-size: 16px; font-weight: bold; position: sticky; top: 0; z-index: 100; }
 .back-icon { cursor: pointer; }
+.search-box { display: flex; align-items: center; gap: 8px; margin: 10px; padding: 8px 12px; background: white; border-radius: 18px; color: #999; }
+.search-box input { flex: 1; border: none; outline: none; background: transparent; font-size: 14px; color: #333; }
 .seckill-item { display: flex; align-items: center; gap: 12px; padding: 12px; margin: 10px; background: white; border-radius: 8px; }
 .seckill-item img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; }
 .seckill-info { flex: 1; }

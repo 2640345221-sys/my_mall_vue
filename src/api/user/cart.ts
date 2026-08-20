@@ -11,10 +11,6 @@ export interface ShoppingCartDTO {
   goodsCount: number
 }
 
-export interface ShoppingCartItemDTO {
-  cartItemId: number
-}
-
 export function getCartPage(params: Record<string, any>): Promise<PageResult> {
   return request.get('/user/cart/page', { params })
 }
@@ -29,8 +25,4 @@ export function updateGoods(data: ShoppingCartDTO) {
 
 export function deleteGoods(cartItemId: number) {
   return request.delete(`/user/cart/${cartItemId}`)
-}
-
-export function getCartItem(params: ShoppingCartItemDTO) {
-  return request.get('/user/cart', { params })
 }

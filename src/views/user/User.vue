@@ -1,22 +1,15 @@
 <template>
   <div class="user-container">
-    <PageHeader title="我的" :showBack="false">
-      <template #right>
-        <el-icon @click="goToSetting" style="cursor:pointer"><Setting /></el-icon>
-      </template>
-    </PageHeader>
+    <PageHeader title="我的" :showBack="false" :topOffset="44" />
 
     
     <div class="user-card" v-if="state.user.id">
-      <div class="user-avatar">
-        <el-avatar :size="60" :src="state.user.avatar || defaultAvatar" />
+      <div class="user-avatar" :style="{ background: state.avatarBg, color: state.avatarColor }">
+        {{ state.avatarText }}
       </div>
       <div class="user-info">
         <div class="user-name">{{ state.user.nickName || state.user.loginName }}</div>
         <div class="user-sign">{{ state.user.introduceSign || '这个人很懒，什么都没写~' }}</div>
-      </div>
-      <div class="user-arrow">
-        <el-icon><ArrowRight /></el-icon>
       </div>
     </div>
 
@@ -53,6 +46,13 @@
 
     
     <div class="function-list">
+      <div class="function-item" @click="goToProfile">
+        <div class="item-left">
+          <el-icon><Edit /></el-icon>
+          <span>编辑个人资料</span>
+        </div>
+        <el-icon><ArrowRight /></el-icon>
+      </div>
       <div class="function-item" @click="goToAddress">
         <div class="item-left">
           <el-icon><Location /></el-icon>
@@ -60,27 +60,13 @@
         </div>
         <el-icon><ArrowRight /></el-icon>
       </div>
-      <div class="function-item" @click="goToProfile">
+      <div class="function-item logout-item" @click="handleLogout">
         <div class="item-left">
-          <el-icon><User /></el-icon>
-          <span>个人资料</span>
+          <el-icon><SwitchButton /></el-icon>
+          <span>退出登录</span>
         </div>
         <el-icon><ArrowRight /></el-icon>
       </div>
-      <div class="function-item" @click="goToAbout">
-        <div class="item-left">
-          <el-icon><InfoFilled /></el-icon>
-          <span>关于我们</span>
-        </div>
-        <el-icon><ArrowRight /></el-icon>
-      </div>
-    </div>
-
-    
-    <div class="logout-section">
-      <el-button type="danger" size="large" @click="handleLogout">
-        退出登录
-      </el-button>
     </div>
 
     <BottomNav />
@@ -92,15 +78,14 @@ import { reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Setting,
   ArrowRight,
   Wallet,
   Box,
   Van,
   ChatDotRound,
   Location,
-  User,
-  InfoFilled
+  Edit,
+  SwitchButton
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user/user'
 import PageHeader from '@/components/PageHeader.vue'
@@ -109,26 +94,44 @@ import BottomNav from '@/components/BottomNav.vue'
 const router = useRouter()
 const userStore = useUserStore()
 
-const defaultAvatar = 'https://s.yezgea02.com/1604040746310/aaaddd.png'
-
 const state = reactive({
   user: {} as any,
-  loading: false
+  loading: false,
+  avatarText: 'M',
+  avatarBg: '#1baeae',
+  avatarColor: '#fff'
 })
+
+// 名字首字符做头像缩写
+const getInitial = (name: string) => {
+  const trimmed = (name || '').trim()
+  if (!trimmed) return 'M'
+  return trimmed.charAt(0).toUpperCase()
+}
+
+// 每次进入随机生成背景与文字色，互补色保证文字与背景必然不同
+const generateAvatarColors = () => {
+  const hue = Math.floor(Math.random() * 360)
+  return {
+    bg: `hsl(${hue}, 68%, 62%)`,
+    color: `hsl(${(hue + 180) % 360}, 80%, 32%)`
+  }
+}
 
 const loadUserInfo = async () => {
   state.loading = true
   try {
     state.user = userStore.userInfo || {}
+    const name = state.user.nickName || state.user.loginName
+    state.avatarText = getInitial(name)
+    const colors = generateAvatarColors()
+    state.avatarBg = colors.bg
+    state.avatarColor = colors.color
   } catch (error) {
     console.error('加载用户信息失败', error)
   } finally {
     state.loading = false
   }
-}
-
-const goToSetting = () => {
-  router.push('/user/setting')
 }
 
 const goToOrder = () => {
@@ -150,11 +153,7 @@ const goToAddress = () => {
 }
 
 const goToProfile = () => {
-  router.push('/user/profile')
-}
-
-const goToAbout = () => {
-  router.push('/about')
+  router.push('/user/setting')
 }
 
 const handleLogout = async () => {
@@ -183,7 +182,8 @@ onMounted(() => {
 .user-container {
   min-height: 100vh;
   background: #f5f5f5;
-  padding-bottom: 80px;
+  padding-top: 44px;
+  padding-bottom: 0;
 }
 
 .user-header {
@@ -223,7 +223,16 @@ onMounted(() => {
 }
 
 .user-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
   margin-right: 15px;
+  flex-shrink: 0;
 }
 
 .user-info {
@@ -295,38 +304,8 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.logout-section {
-  margin-top: 30px;
-  padding: 0 20px;
-}
-
-.logout-section .el-button {
-  width: 100%;
-}
-
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-around;
-  padding: 8px 0;
-  background: white;
-  border-top: 1px solid #eee;
-  z-index: 1000;
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: #666;
-  font-size: 12px;
-}
-
-.nav-item.active,
-.nav-item.router-link-active {
-  color: #1baeae;
+.logout-item,
+.logout-item .item-left {
+  color: #f56c6c;
 }
 </style>

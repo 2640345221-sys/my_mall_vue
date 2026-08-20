@@ -1,6 +1,6 @@
 <template>
   <div class="create-order">
-    <PageHeader title="确认订单" @back="goBack" />
+    <PageHeader title="确认订单" :topOffset="44" @back="goBack" />
 
     
     <div class="address-section" @click="goToAddress">
@@ -76,6 +76,8 @@
         提交订单
       </el-button>
     </div>
+
+    <BottomNav />
   </div>
 </template>
 
@@ -85,6 +87,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowRight, Location, Money, Wallet } from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
+import BottomNav from '@/components/BottomNav.vue'
 import { getById as getAddressById, getDefault as getDefaultAddress } from '@/api/user/address'
 import { createOrder, payOrder } from '@/api/user/order'
 import { getCartPage } from '@/api/user/cart'
@@ -220,6 +223,7 @@ onMounted(() => {
 .create-order {
   min-height: 100vh;
   background: #f5f5f5;
+  padding-top: 44px;
   padding-bottom: 100px;
 }
 
@@ -247,7 +251,7 @@ onMounted(() => {
 }
 
 .address-section {
-  margin-top: 50px;
+  margin-top: 0;
   background: white;
   padding: 15px;
   display: flex;

@@ -1,6 +1,6 @@
 <template>
   <div class="about-container">
-    <PageHeader title="关于我们" @back="goBack" />
+    <PageHeader title="关于我们" :topOffset="44" @back="goBack" />
 
     
     <div class="about-content">
@@ -72,6 +72,8 @@
         <p>本系统仅供学习交流使用</p>
       </div>
     </div>
+
+    <BottomNav />
   </div>
 </template>
 
@@ -79,6 +81,7 @@
 import { useRouter } from 'vue-router'
 import { Shop, InfoFilled, Cpu, Message } from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
+import BottomNav from '@/components/BottomNav.vue'
 
 const router = useRouter()
 
@@ -91,6 +94,7 @@ const goBack = () => {
 .about-container {
   min-height: 100vh;
   background: #f5f5f5;
+  padding-top: 44px;
 }
 
 .about-header {
@@ -117,7 +121,7 @@ const goBack = () => {
 }
 
 .about-content {
-  padding-top: 50px;
+  padding-top: 0;
 }
 
 .logo-section {

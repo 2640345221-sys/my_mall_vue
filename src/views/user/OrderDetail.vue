@@ -1,6 +1,6 @@
 <template>
   <div class="order-detail-container">
-    <PageHeader title="订单详情" @back="goBack" />
+    <PageHeader title="订单详情" :topOffset="44" @back="goBack" />
 
     
     <div class="status-section" v-if="state.order.orderNo">
@@ -99,7 +99,7 @@
         立即支付
       </el-button>
       <el-button
-        v-if="state.order.orderStatus === 2"
+        v-if="state.order.orderStatus === 3"
         type="success"
         size="large"
         @click="handleConfirm"
@@ -133,6 +133,8 @@
         </el-button>
       </div>
     </el-dialog>
+
+    <BottomNav />
   </div>
 </template>
 
@@ -151,6 +153,7 @@ import {
 } from '@element-plus/icons-vue'
 import { getById, payOrder, confirmOrder, cancelOrder } from '@/api/user/order'
 import PageHeader from '@/components/PageHeader.vue'
+import BottomNav from '@/components/BottomNav.vue'
 import { formatPrice } from '@/utils/format'
 
 const route = useRoute()
@@ -164,22 +167,26 @@ const state = reactive({
 
 const getStatusText = (status: number) => {
   const statusMap: Record<number, string> = {
-    0: '待付款',
-    1: '待发货',
-    2: '待收货',
-    3: '已完成',
-    4: '已取消'
+    0: '待支付',
+    1: '已支付',
+    2: '配货完成',
+    3: '出库成功',
+    4: '交易成功',
+    [-1]: '已关闭',
+    [-3]: '已取消'
   }
   return statusMap[status] || '未知状态'
 }
 
 const getStatusDesc = (status: number) => {
   const descMap: Record<number, string> = {
-    0: '请在30分钟内完成支付',
-    1: '商家正在备货中',
-    2: '商品已发出，请注意查收',
-    3: '交易已完成，期待您的评价',
-    4: '订单已取消'
+    0: '请在15分钟内完成支付',
+    1: '已支付，等待商家配货',
+    2: '配货完成，等待出库',
+    3: '已出库，请确认收货',
+    4: '交易已完成，期待您的评价',
+    [-1]: '订单已关闭',
+    [-3]: '订单已取消'
   }
   return descMap[status] || ''
 }
@@ -189,8 +196,10 @@ const getStatusColor = (status: number) => {
     0: '#f44',
     1: '#ff976a',
     2: '#1989fa',
-    3: '#07c160',
-    4: '#999'
+    3: '#1989fa',
+    4: '#07c160',
+    [-1]: '#999',
+    [-3]: '#999'
   }
   return colorMap[status] || '#999'
 }
@@ -200,8 +209,10 @@ const getStatusIcon = (status: number) => {
     0: Clock,
     1: Box,
     2: Box,
-    3: Check,
-    4: Close
+    3: Box,
+    4: Check,
+    [-1]: Close,
+    [-3]: Close
   }
   return iconMap[status] || Clock
 }
@@ -303,6 +314,7 @@ onMounted(() => {
 .order-detail-container {
   min-height: 100vh;
   background: #f5f5f5;
+  padding-top: 44px;
   padding-bottom: 80px;
 }
 
@@ -330,7 +342,7 @@ onMounted(() => {
 }
 
 .status-section {
-  margin-top: 44px;
+  margin-top: 0;
   background: #1baeae;
   padding: 30px 20px;
   text-align: center;

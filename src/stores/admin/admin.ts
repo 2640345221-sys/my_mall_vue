@@ -36,48 +36,9 @@ export const useAdminStore = defineStore('admin', () => {
     return adminInfo.value
   }
 
-  // 管理员登出
-  const logout = async () => {
-    try {
-      await request.delete('/admin/logout')
-    } catch (error) {
-      console.error('登出请求失败', error)
-    }
-    token.value = ''
-    adminInfo.value = null
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('adminInfo')
-  }
-
-  // 获取管理员信息
-  const getInfo = async (): Promise<Admin> => {
-    const data: any = await request.get('/admin/profile')
-    adminInfo.value = {
-      id: data.id,
-      nickName: data.nickName,
-      loginName: data.username
-    }
-    return adminInfo.value
-  }
-
-  // 从 localStorage 恢复登录状态
-  const restoreLogin = () => {
-    const savedToken = localStorage.getItem('adminToken')
-    const savedInfo = localStorage.getItem('adminInfo')
-    if (savedToken && savedInfo) {
-      token.value = savedToken
-      adminInfo.value = JSON.parse(savedInfo)
-      return true
-    }
-    return false
-  }
-
   return {
     token,
     adminInfo,
-    doLogin,
-    logout,
-    getInfo,
-    restoreLogin
+    doLogin
   }
 })

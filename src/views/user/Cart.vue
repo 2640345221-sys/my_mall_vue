@@ -1,18 +1,23 @@
 <template>
   <div class="cart-container">
-    <PageHeader title="购物车" :showBack="false">
+    <PageHeader title="购物车" :showBack="false" :topOffset="44">
       <template #right>
         <el-icon @click="goToHome" style="cursor:pointer"><HomeFilled /></el-icon>
       </template>
     </PageHeader>
 
-    
+    <div class="search-box">
+      <el-icon><Search /></el-icon>
+      <input v-model="state.keyword" placeholder="搜索购物车商品" />
+    </div>
+
+
     <div class="cart-content" v-if="state.list.length > 0">
-      
-      <div class="cart-list">
+
+      <div class="cart-list" v-if="filteredList.length > 0">
         <div
           class="cart-item"
-          v-for="item in state.list"
+          v-for="item in filteredList"
           :key="item.cartItemId"
         >
           <el-checkbox v-model="item.checked" @change="handleItemChange" />
@@ -80,7 +85,7 @@
 import { reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { HomeFilled } from '@element-plus/icons-vue'
+import { HomeFilled, Search } from '@element-plus/icons-vue'
 import BottomNav from '@/components/BottomNav.vue'
 import { getCartPage, updateGoods, deleteGoods } from '@/api/user/cart'
 import { formatPrice } from '@/utils/format'
@@ -90,8 +95,15 @@ const router = useRouter()
 
 const state = reactive({
   list: [] as Array<any>,
+  keyword: '',
   checkAll: false,
   loading: false
+})
+
+const filteredList = computed(() => {
+  const kw = state.keyword.trim().toLowerCase()
+  if (!kw) return state.list
+  return state.list.filter(item => (item.goodsName || '').toLowerCase().includes(kw))
 })
 
 const totalPrice = computed(() => {
@@ -204,8 +216,12 @@ onMounted(() => {
 .cart-container {
   min-height: 100vh;
   background: var(--bg-warm);
-  padding-bottom: 120px;
+  padding-top: 44px;
+  padding-bottom: 80px;
 }
+
+.search-box { display: flex; align-items: center; gap: 8px; margin: 10px 12px; padding: 8px 12px; background: var(--card); border-radius: 18px; color: var(--text-muted); box-shadow: var(--shadow-sm); }
+.search-box input { flex: 1; border: none; outline: none; background: transparent; font-size: 14px; color: var(--text); }
 
 .cart-content { padding-top: 0; }
 
@@ -272,7 +288,7 @@ onMounted(() => {
 
 .cart-footer {
   position: fixed;
-  bottom: 50px;
+  bottom: 0;
   left: 0;
   right: 0;
   display: flex;

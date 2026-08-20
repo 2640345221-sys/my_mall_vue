@@ -12,10 +12,6 @@ export interface UserAddress {
   detailAddress?: string
 }
 
-export function getAddressPage(params: Record<string, any>) {
-  return request.get('/user/address/page', { params })
-}
-
 export function getById(id: number): Promise<UserAddress> {
   return request.get(`/user/address/${id}`)
 }

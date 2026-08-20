@@ -1,11 +1,21 @@
 <template>
   <div class="setting-container">
-    <PageHeader title="账号管理" @back="goBack" />
+    <PageHeader title="账号管理" :topOffset="44" @back="goBack" />
 
     
     <div class="setting-form">
       <el-form :model="state.form" label-position="top" :rules="rules" ref="formRef">
-        
+
+        <el-form-item label="账号">
+          <el-input :model-value="state.loginName" disabled />
+        </el-form-item>
+
+
+        <el-form-item label="注册时间">
+          <el-input :model-value="state.createTime" disabled />
+        </el-form-item>
+
+
         <el-form-item label="昵称" prop="nickName">
           <el-input
             v-model="state.form.nickName"
@@ -60,25 +70,18 @@
       >
         保存修改
       </el-button>
-
-      <el-button
-        type="danger"
-        size="large"
-        plain
-        @click="handleLogout"
-        class="logout-btn"
-      >
-        退出登录
-      </el-button>
     </div>
+
+    <BottomNav />
   </div>
 </template>
 
 <script setup lang="ts">
 import { reactive, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import PageHeader from '@/components/PageHeader.vue'
+import BottomNav from '@/components/BottomNav.vue'
 import { useUserStore } from '@/stores/user/user'
 
 const router = useRouter()
@@ -86,6 +89,8 @@ const userStore = useUserStore()
 const formRef = ref()
 
 const state = reactive({
+  loginName: '',
+  createTime: '',
   form: {
     nickName: '',
     introduceSign: '',
@@ -124,6 +129,8 @@ const loadUserInfo = async () => {
   try {
     const res = await userStore.getInfo()
     if (res) {
+      state.loginName = res.loginName || ''
+      state.createTime = res.createTime || ''
       state.form.nickName = res.nickName || ''
       state.form.introduceSign = res.introduceSign || ''
     }
@@ -159,23 +166,6 @@ const handleSave = async () => {
   }
 }
 
-const handleLogout = async () => {
-  try {
-    await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-
-    localStorage.removeItem('token')
-    localStorage.removeItem('userInfo')
-
-    ElMessage.success('退出成功')
-    router.push('/login')
-  } catch (error) {
-  }
-}
-
 const goBack = () => {
   router.back()
 }
@@ -189,6 +179,7 @@ onMounted(() => {
 .setting-container {
   min-height: 100vh;
   background: #f5f5f5;
+  padding-top: 44px;
 }
 
 .setting-header {
@@ -215,7 +206,7 @@ onMounted(() => {
 }
 
 .setting-form {
-  padding: 70px 20px 20px;
+  padding: 20px;
   background: white;
   margin-bottom: 10px;
 }
@@ -227,8 +218,7 @@ onMounted(() => {
   gap: 15px;
 }
 
-.save-btn,
-.logout-btn {
+.save-btn {
   width: 100%;
 }
 </style>

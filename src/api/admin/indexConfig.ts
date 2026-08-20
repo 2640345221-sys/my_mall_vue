@@ -19,10 +19,6 @@ export function getIndexConfigPage(indexPageDTO: IndexPageDTO): Promise<PageResu
   return request.get('/admin/indexConfig', { params: indexPageDTO })
 }
 
-export function getIndexConfigById(id: number): Promise<IndexConfigDTO> {
-  return request.get(`/admin/indexConfig/${id}`)
-}
-
 export function deleteIndexConfig(ids: number[]) {
   return request.delete('/admin/indexConfig', { params: { ids } })
 }
