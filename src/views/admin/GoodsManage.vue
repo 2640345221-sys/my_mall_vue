@@ -177,7 +177,7 @@ const handleCoverSuccess = (response: any) => {
     state.form.coverImg = response.data
     ElMessage.success('图片上传成功')
   } else {
-    ElMessage.error(response.msg || '上传失败')
+    ElMessage.error(response.message || '上传失败')
   }
 }
 

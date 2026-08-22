@@ -142,6 +142,8 @@ const submitSeckill = async () => {
 }
 
 const startPolling = (seckillGoodsId: number) => {
+  //先清掉可能残留的轮询，防止重复提交导致多个 interval 叠加
+  clearPolling()
   let count = 0
   pollingTimer.value = setInterval(async () => {
     count++

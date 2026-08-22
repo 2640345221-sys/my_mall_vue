@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted, computed } from 'vue'
+import { reactive, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowRight, Location, Money, Wallet } from '@element-plus/icons-vue'
@@ -95,6 +95,8 @@ import { formatPrice } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
+//保存支付成功后延迟跳转的定时器句柄，组件卸载时清理，防止页面跳走后仍触发路由跳转
+let payTimer: number | null = null
 
 const state = reactive({
   goodsList: [] as Array<any>,
@@ -205,7 +207,7 @@ const handlePay = async (orderNo: string) => {
     })
     ElMessage.success('支付成功')
     
-    setTimeout(() => {
+    payTimer = window.setTimeout(() => {
       router.push(`/order/${orderNo}`)
     }, 1500)
   } catch (error) {
@@ -216,6 +218,14 @@ const handlePay = async (orderNo: string) => {
 
 onMounted(() => {
   init()
+})
+
+//组件卸载时清除延迟跳转的定时器，避免用户中途离开仍被强行跳转到订单页
+onBeforeUnmount(() => {
+  if (payTimer) {
+    clearTimeout(payTimer)
+    payTimer = null
+  }
 })
 </script>
 

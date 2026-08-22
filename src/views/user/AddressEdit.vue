@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted, ref } from 'vue'
+import { reactive, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getById, addAddress, updateAddress, deleteById } from '@/api/user/address'
@@ -72,6 +72,8 @@ import BottomNav from '@/components/BottomNav.vue'
 const route = useRoute()
 const router = useRouter()
 const formRef = ref()
+//保存/删除成功后延迟返回的定时器句柄，组件卸载时清理，防止关页后仍误回退
+let backTimer: number | null = null
 
 const state = reactive({
   type: 'add' as 'add' | 'edit',
@@ -595,7 +597,7 @@ const handleSave = async () => {
     }
     
     ElMessage.success('保存成功')
-    setTimeout(() => {
+    backTimer = window.setTimeout(() => {
       goBack()
     }, 1000)
   } catch (error) {
@@ -618,7 +620,7 @@ const handleDelete = async () => {
     state.deleting = true
     await deleteById(state.addressId)
     ElMessage.success('删除成功')
-    setTimeout(() => {
+    backTimer = window.setTimeout(() => {
       goBack()
     }, 1000)
   } catch (error) {
@@ -636,6 +638,14 @@ const findRegionById = (list: Array<any>, id: number) => {
 
 onMounted(() => {
   init()
+})
+
+//组件卸载时清除延迟返回的定时器，避免用户中途离开仍被误回退一页
+onBeforeUnmount(() => {
+  if (backTimer) {
+    clearTimeout(backTimer)
+    backTimer = null
+  }
 })
 </script>
 

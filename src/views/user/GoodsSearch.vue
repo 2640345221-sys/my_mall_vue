@@ -185,14 +185,19 @@ const clearHistory = () => {
 
 const searchGoods = async (isRefresh = false) => {
   if (state.loading) return
-  
+
+  //发起搜索前先落盘关键词：即使请求失败或页面中途关闭，搜索记录也已保存
+  if (isRefresh && state.keyword) {
+    saveHistory()
+  }
+
   state.loading = true
   try {
     if (isRefresh) {
       state.page = 1
       state.productList = []
     }
-    
+
     const params: any = {
       pageNumber: state.page,
       pageSize: state.pageSize,
@@ -212,10 +217,6 @@ const searchGoods = async (isRefresh = false) => {
     state.total = res.total || 0
     state.finished = state.productList.length >= state.total
     state.searched = true
-    
-    if (isRefresh && state.keyword) {
-      saveHistory()
-    }
   } catch (error) {
     ElMessage.error('搜索失败')
     console.error(error)
